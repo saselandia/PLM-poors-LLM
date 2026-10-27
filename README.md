@@ -4,7 +4,7 @@
 
 PLM es una aplicación de escritorio experimental para **llevar el resumen de un proyecto entre Codex, Claude Desktop y Antigravity**. Añade el resumen, elige el destino y pulsa **Copiar contexto y abrir…**. Después pega el texto en el chat de la aplicación original, donde trabajas y recibes respuestas.
 
-La versión **0.6.0** funciona como un organizador local y un lanzador. Cada herramienta se utiliza en su aplicación original, con su propia cuenta, suscripción e interfaz. El traspaso de contexto es manual.
+La versión **0.7.0** funciona como un organizador local y un lanzador. Cada herramienta se utiliza en su aplicación original, con su propia cuenta, suscripción e interfaz. El traspaso de contexto es manual.
 
 ## Para qué sirve
 
@@ -32,29 +32,23 @@ Ejemplo: trabajas una solución en Codex, registras las decisiones en PLM, prepa
 
 Abrir una herramienta no abre automáticamente un proyecto o una sesión. Copiar o exportar contexto tampoco confirma que se haya enviado o leído en el destino.
 
-## Nuevo proyecto y contexto duro
+## Cómo se usa
 
-Al crear un proyecto puedes elegir **Solo una conversación**, sin carpeta, o **Carpeta con esta conversación**, que permite seleccionar una carpeta existente. La opción sin carpeta es la inicial; si vuelves a ella después de seleccionar una carpeta, se elimina esa vinculación antes de crear el proyecto.
+1. **Copiar petición.** Pégala en el chat que quieres continuar. Pide a la IA un `plm.md` de hasta 500 líneas con objetivo, requisitos, decisiones, estado real, archivos, pruebas, próximos pasos y, si se usaba Git, repositorios, ramas y cambios pendientes, sin inventar nada.
+2. **Copia la respuesta de la IA y pulsa Pegar resumen** (o Ctrl+V en la ventana de PLM). PLM lee el portapapeles y muestra el resumen para revisarlo antes de guardarlo. Si el portapapeles está vacío, aparece un cuadro para pegarlo a mano. **Abrir plm.md** hace lo mismo desde un archivo.
+3. **Elige Codex, Claude o Antigravity.** Debajo aparece el uso de esa suscripción (véase más abajo) y el modelo que piensas usar; es solo un recordatorio, no cambia nada en la otra aplicación.
+4. **Copiar contexto y abrir…** copia el documento y abre la aplicación instalada, sin prompts ni credenciales. Tú eliges el chat y pegas. **Revisar lo que se copiará** y **Opciones de copia y exportación** permiten comprobarlo, copiarlo sin abrir nada o exportarlo a Markdown.
+5. **Cuando avances**, pide un resumen nuevo y vuelve a pegarlo en la misma conversación. El anterior queda en **Versiones anteriores del contexto** (las diez últimas, restaurables).
 
-El campo **Contexto duro** sirve para conservar las instrucciones de la conversación y se incluye en los traspasos. Su texto de ayuda es:
+Límites del resumen: 500 líneas y 100.000 caracteres; los archivos más largos se rechazan, no se recortan. Si el contexto cambia mientras revisas un resumen, PLM lo rechaza para no sobrescribir nada. Cancelar no guarda nada.
 
-> ejemplos: En cada mensaje de esta conversacion se usara git para especificar que se ha hecho en cada prompt.
+**Proyectos y carpetas.** Pegar un resumen sin conversación seleccionada crea una nueva. **Nuevo proyecto** crea una vacía, con carpeta de trabajo opcional; las conversaciones con la misma carpeta se agrupan en la barra lateral, donde **Nueva conversación** añade otra. Eliminar una conversación nunca borra su carpeta.
 
-El ejemplo es un placeholder, no una instrucción que se guarde automáticamente. Puedes editar el contexto duro desde **Editar instrucciones y datos del proyecto**. Los valores de los proyectos anteriores se conservan.
+**Instrucciones fijas.** El **Contexto duro** (por ejemplo, «en cada mensaje se usará git para indicar qué se ha hecho») se añade siempre al contexto copiado. Se edita en **Instrucciones fijas y nombre**. Los campos de decisiones y próximos pasos de versiones anteriores solo aparecen si ya tenían contenido.
 
-## Importar contexto de una conversación
+**Copias.** **Exportar proyecto** guarda un JSON sin rutas locales; **Importar proyecto (.json)**, en la barra lateral, lo recupera. Los textos del antiguo registro manual se conservan en **Textos guardados en versiones anteriores** y solo se copian si lo marcas.
 
-1. Abre el desplegable **Importar contexto** de la barra lateral.
-2. Pulsa **Copiar petición para la IA** y pégala en la conversación de la que quieras conservar contexto. La petición pide un archivo **plm.md** con el proyecto resumido para que otro agente pueda continuar: objetivo, requisitos, decisiones, estado real, archivos relevantes, pruebas y próximos pasos. Si se usaba Git, también pide identificar los repositorios, URLs conocidas sin credenciales, ramas, commits relevantes y cambios pendientes, sin inventar información.
-3. Guarda o descarga la respuesta como Markdown y pulsa **Añadir plm.md**.
-4. Revisa el archivo y elige el modelo en el menú que aparece. **Mid es lo recomendado para empezar**, con **Terra, Gemini Flash, Claude Haiku y Claude Sonnet**.
-5. Confirma **Importar contexto**. El archivo y la preferencia de modelo se guardan en una nueva conversación de PLM, sin enviar nada a un proveedor. Puedes cambiar después el modelo en la sección **Continúa en tu aplicación**.
-
-El límite es **500 líneas**, con un máximo adicional de 100.000 caracteres. Un salto de línea final no añade una línea vacía al cómputo. Los archivos de 501 líneas o más se rechazan con instrucciones para resumirlos; no se recortan silenciosamente. El contenido importado se conserva y se incluye en los traspasos aunque excluyas los textos archivados de versiones anteriores.
-
-El selector se ordena en **Low → Mid → High → Frontier**. Son categorías orientativas de PLM para organizar el trabajo, no una clasificación oficial de los proveedores ni una garantía de disponibilidad. La selección se guarda como preferencia: tú eliges ese modelo en la aplicación oficial. No se cambia automáticamente el modelo de Claude, Codex o Antigravity ni se hacen peticiones a sus servicios. Véanse las [fuentes y el catálogo](docs/MODELS.md).
-
-Las antiguas copias JSON siguen disponibles dentro del mismo desplegable como **Restaurar copia JSON**, y mediante **Exportar proyecto**. Los proyectos guardados antes de esta versión se conservan.
+Esc cierra el desplegable o diálogo que está delante. Los niveles de modelo (Low → Mid → Frontier) son una organización de PLM, no una clasificación oficial; véanse las [fuentes y el catálogo](docs/MODELS.md).
 
 ## Legalidad y condiciones de uso
 
@@ -117,10 +111,10 @@ Los paquetes de **Windows y macOS** siguen pendientes de validación nativa. Las
 
 1. Ejecuta `pnpm sandbox`: crea el repositorio local `sandbox/PLM- poors LLM`, con Git independiente y una tarea pequeña.
 2. Crea un proyecto en PLM y elige esa carpeta, o ejecuta `pnpm demo`.
-3. En **Contexto**, copia la petición de resumen y úsala en tu conversación original. Añade el `plm.md` recibido o pulsa **Pegar resumen**.
+3. Pulsa **Copiar petición**, úsala en tu conversación original, copia la respuesta y pulsa **Pegar resumen**.
 4. Elige una herramienta de destino y pulsa **Revisar contexto**.
 5. Copia el documento y pégalo tú en el chat de la aplicación oficial.
-6. Cuando avances en la otra aplicación, pide un resumen actualizado y usa **Actualizar plm.md** en la misma conversación de PLM.
+6. Cuando avances en la otra aplicación, pide un resumen actualizado y pégalo en la misma conversación de PLM.
 
 ## Desarrollo y verificación
 
@@ -163,45 +157,15 @@ El empaquetador también admite `pnpm package darwin arm64`, `pnpm package win32
 
 La licencia de distribución del código de PLM está pendiente de definir. Publicar el repositorio para consulta no se presenta como una licencia general de reutilización. Las dependencias y los productos de terceros conservan sus propias licencias; los paquetes deben conservar los avisos de Electron y Chromium.
 
-### Conversaciones dentro de carpetas
+## Uso de las suscripciones
 
-La barra lateral agrupa las conversaciones por su carpeta de trabajo. Despliega una carpeta y pulsa **Nueva conversación**, o usa el botón de la cabecera mientras estás en una conversación de esa carpeta. Cada conversación conserva su resumen y contexto duro. Las conversaciones sin carpeta aparecen por separado. Las carpetas ya vinculadas se reconocen al reiniciar, sin tener que seleccionarlas otra vez.
+Al elegir Codex, Claude o Antigravity, la tarjeta muestra el uso de esa suscripción: porcentaje usado, restante, reinicio y fecha de lectura. La cabecera muestra el porcentaje de la primera ventana y **Uso y límites** abre el detalle de las tres. No se calcula el consumo contando mensajes. Una cuota no informada se muestra como no disponible, nunca como 0 %, y las lecturas antiguas se identifican.
 
-Elige el destino y el modelo en la pantalla principal. **Copiar contexto y abrir…** copia el documento y lanza la aplicación original; **Aplicaciones** permite abrir o configurar Codex, Claude y Antigravity. En ventanas estrechas, el botón de navegación abre la lista de carpetas. Eliminar una conversación solo elimina esa conversación de PLM, nunca su carpeta ni las demás conversaciones.
+Solo se usan fuentes oficiales y de solo lectura, y no todas las aplicaciones las ofrecen:
 
-Esc cierra el desplegable o panel activo. Los diálogos conservan su cierre nativo y los desplegables anidados se cierran antes que el diálogo que los contiene.
+- **Codex: funciona con la aplicación de escritorio.** PLM consulta `account/rateLimits/read` mediante el `codex app-server` oficial instalado, que comparte cuenta con el cliente de escritorio. No extrae tokens, inicia logins, crea conversaciones ni llama a modelos. Se actualiza al abrir PLM, cada minuto mientras está visible y al pulsar **Actualizar uso**.
+- **Claude y Antigravity: solo desde sus CLI de terminal.** Claude Desktop y la aplicación de Antigravity no publican su cuota. Claude Code y Antigravity CLI sí lo hacen mediante su `statusLine` documentada; **Conectar Claude Code** / **Conectar Antigravity CLI** (en **Uso y límites**) añade un script local que la recoge cada vez que usas el CLI. Si solo usas las aplicaciones de escritorio, PLM lo indica y no muestra porcentaje. No se ejecuta `agy -p`, no se envían prompts ni se accede a endpoints privados.
 
-## Continuar y actualizar el contexto (0.4.0)
+Las conexiones de barra de estado conservan el comando anterior y **Desconectar medidor** lo restaura; si alguien cambió esa configuración después, PLM no la sobrescribe. Las cuotas y copias de configuración se guardan en `userData/usage`, fuera de los proyectos. El recolector descarta correo, IDs de sesión, rutas de transcripciones y contexto; solo conserva cuotas, plan y fecha.
 
-En la versión 0.5.0 ya no hay pestañas ni un editor de registro manual. La pantalla muestra el resumen y las acciones para continuar en una aplicación. No hace falta copiar cada mensaje.
-
-1. Copia la petición de resumen y pégala en tu conversación de la aplicación original.
-2. Añade el Markdown con **Añadir plm.md / Actualizar resumen** o usa **Pegar resumen**. Puedes revisar el contenido y el modelo antes de confirmar.
-3. Usa **Copiar contexto y abrir…** para copiar el documento y solicitar la apertura de la aplicación instalada. Pega tú el texto en el chat donde quieras continuar. **Revisar lo que se copiará** permite comprobarlo antes.
-4. Vuelve a actualizar el resumen cuando avance el trabajo, conservando la misma conversación, carpeta, contexto duro y decisiones.
-
-El desplegable de la barra lateral sigue permitiendo importar una conversación nueva. Actualizar con el botón de la pantalla principal modifica la conversación seleccionada y conserva su nombre; no crea otra. Ambos métodos aceptan hasta 500 líneas y 100.000 caracteres. Cancelar no guarda ni actualiza nada.
-
-**Versiones anteriores del contexto** permite revisar y restaurar las diez últimas versiones no vacías de contexto duro, decisiones, próximos pasos y resumen. Restaurar también conserva una copia del estado sustituido, dentro de ese límite. Las versiones se guardan localmente y se incluyen en las copias JSON; los traspasos a modelos solo incluyen el contexto vigente. El límite general del espacio sigue siendo 8 MB. No son copias de seguridad independientes del archivo de trabajo.
-
-Si el contexto cambia mientras revisas una importación, PLM la rechaza para no sobrescribir cambios sin revisión. Los cambios sin guardar en el formulario también deben guardarse antes de actualizar o restaurar.
-
-## Flujo directo (0.5.0)
-
-La pantalla principal explica el propósito de PLM y muestra dos partes: **Tu resumen del proyecto** y **Continúa en tu aplicación**. Selecciona Codex, Claude o Antigravity y pulsa **Copiar contexto y abrir [aplicación]**. Si no está detectada, aparece **Seleccionar aplicación de…** para indicar dónde está instalada. El modelo elegido es una preferencia: selecciónalo también en la aplicación original.
-
-El botón copia el contexto y solicita abrir el programa instalado, sin argumentos de prompt ni credenciales. No elige el chat externo, pega texto, pulsa Enviar ni inicia inferencia. El usuario elige su conversación y pega allí el texto. La interfaz distingue el inicio solicitado de un fallo de apertura; en caso de fallo, explica si el texto sigue copiado. Puedes revisar antes el contenido o usar **Opciones de copia y exportación** para copiarlo sin abrir ninguna aplicación.
-
-El registro manual se ha retirado. Los textos existentes y los incluidos en antiguas copias JSON se conservan en **Textos guardados en versiones anteriores**. No hay editor para añadir mensajes; el archivo se excluye por defecto de los traspasos y solo se incluye si lo marcas explícitamente. El historial de copias y exportaciones y las revisiones de contexto siguen disponibles en desplegables. Esc los cierra.
-
-## Uso de las suscripciones (0.6.0)
-
-El botón **Uso y límites** de la cabecera abre el panel de las tres suscripciones. Si hay lectura válida, la cabecera muestra el porcentaje usado de la primera ventana del destino seleccionado. Dentro de **Uso de la suscripción de…**, junto a las acciones de continuación, también puedes consultar sus ventanas. Se muestran porcentaje usado, restante, reinicio y fecha de lectura; no se calcula el consumo contando mensajes ni usando el tamaño del contexto. Una cuota no informada se muestra como no disponible, nunca como 0 %. Las lecturas antiguas se identifican y una ventana vencida requiere una lectura nueva.
-
-- **Codex:** consulta de solo lectura a `account/rateLimits/read` mediante el `codex app-server` oficial instalado. Codex gestiona su autenticación; PLM no extrae tokens, inicia logins, crea conversaciones, consume reinicios ni llama a modelos. Busca el CLI en PATH y ubicaciones conocidas del cliente de escritorio. Si no está instalado o la sesión no admite consultar límites, informa del problema. Se actualiza al abrir PLM, cada minuto mientras su interfaz esté visible y al pulsar **Actualizar uso**.
-- **Claude:** pulsa **Conectar Claude Code** para recibir las cuotas documentadas de su `statusLine`. El CLI las publica al usarlo normalmente, cuando su versión y cuenta las proporcionan. No hace falta escribir porcentajes. No puede consultar directamente la cuota de Claude Desktop; comprueba que el CLI use la misma cuenta.
-- **Antigravity:** pulsa **Conectar Antigravity CLI** para recibir el objeto `quota` de su `statusLine` documentada. No se ejecuta `agy -p`, se envían prompts ni se accede a endpoints privados. Si el CLI no publica cuotas, el panel espera datos. Esta conexión tampoco lee directamente el chat de escritorio.
-
-Las dos conexiones de barra de estado añaden un script local en la configuración global del CLI correspondiente. Conservan el comando anterior y su salida, y **Desconectar medidor** restaura la configuración previa. Si alguien ha cambiado esa configuración después, PLM evita sobrescribirla al desconectar. Las cuotas y copias de configuración se guardan dentro de `userData/usage`, fuera de los proyectos y sus exportaciones. El recolector descarta correo, IDs de sesión, rutas de transcripciones y contenido de contexto; solo conserva cuotas, plan si se informa y fecha. La configuración anterior puede contener tus comandos personales y se guarda con los permisos del perfil (0600 en POSIX).
-
-Fuentes oficiales: [Codex app-server](https://learn.chatgpt.com/docs/app-server), [Claude Code statusLine](https://code.claude.com/docs/en/statusline), [Antigravity statusLine](https://www.antigravity.google/docs/cli/statusline). La disponibilidad depende de la versión instalada y de la cuenta del CLI. Las cuotas no se suman entre proveedores.
+Fuentes oficiales: [Codex app-server](https://learn.chatgpt.com/docs/app-server), [Claude Code statusLine](https://code.claude.com/docs/en/statusline), [Antigravity statusLine](https://www.antigravity.google/docs/cli/statusline). Las cuotas no se suman entre proveedores.

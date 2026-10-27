@@ -1,11 +1,4 @@
-import {
-  MODELS,
-  MODEL_TIERS,
-  DEFAULT_MODEL,
-  modelById,
-  CONTEXT_REQUEST,
-  contextText,
-} from '../shared/context.js';
+import { MODELS, MODEL_TIERS, DEFAULT_MODEL, modelById, contextText } from '../shared/context.js';
 const api = window.plm;
 const $ = (selector) => document.querySelector(selector);
 const escape = (value) =>
@@ -114,19 +107,17 @@ function sidebar() {
     })
     .join('');
   return `<aside class="sidebar ${navigationOpen ? 'is-open' : ''}">
-    <div class="brand"><div class="brand-symbol">p<span>l</span>m</div><button class="nav-close" data-action="navigation" aria-label="Cerrar navegación">×</button><span class="version">0.6</span></div>
+    <div class="brand"><div class="brand-symbol">p<span>l</span>m</div><button class="nav-close" data-action="navigation" aria-label="Cerrar navegación">×</button><span class="version">0.7</span></div>
     <div class="brand-caption">poors LLM</div>
     <button class="new-project" data-action="new">${icon('plus')} Nuevo proyecto <span>↗</span></button>
-    <div class="sidebar-section"><span>CARPETAS Y CONVERSACIONES</span><span>${workspace.projects.length}</span></div>
+    <div class="sidebar-section"><span>CONVERSACIONES</span><span>${workspace.projects.length}</span></div>
     <nav aria-label="Proyectos">${folders}${workspace.projects.some((p) => !p.folder) ? '<div class="standalone-label">Sin carpeta</div>' : ''}${workspace.projects
       .filter((p) => !p.folder)
       .map(projectLink)
       .join(
         '',
-      )}${workspace.projects.length ? '' : '<p class="sidebar-empty">Crea una conversación o importa tu contexto para empezar.</p>'}</nav>
-    <details class="context-import-menu"><summary>${icon('upload')} Importar contexto <span>⌄</span></summary><div class="context-import-guide"><p>Pídele a la IA de la conversación que genere <strong>plm.md</strong> con el contexto resumido del proyecto para que otro agente pueda continuar bien.</p><p><strong>Máximo 500 líneas.</strong> Incluye objetivo, decisiones, estado actual y próximos pasos.</p><button class="secondary" data-action="copy-context-request">${icon('copy')} Copiar petición para la IA</button><details class="request-details"><summary>Ver la petición completa</summary><pre>${escape(CONTEXT_REQUEST)}</pre></details><button class="primary" data-action="choose-context">${icon('upload')} Añadir plm.md</button><button class="secondary" data-action="paste-context">Pegar contexto</button><p>Después podrás elegir el modelo. Empieza por <strong>Mid</strong>.</p><button class="backup-link" data-action="restore-project">Restaurar copia JSON</button></div></details>
-    <button class="apps-button secondary" data-action="applications">${icon('layers')} Aplicaciones</button>
-    <div class="sidebar-bottom"><div class="local-dot"></div><div>Guardado en este equipo</div></div>
+      )}${workspace.projects.length ? '' : '<p class="sidebar-empty">Pega el resumen de un chat para empezar.</p>'}</nav>
+    <div class="sidebar-bottom"><div class="local-dot"></div><div>Guardado en este equipo<button class="backup-link" data-action="restore-project">Importar proyecto (.json)</button></div></div>
   </aside>`;
 }
 function providerCards() {
@@ -186,9 +177,16 @@ function usageWindows(info) {
     : '';
   return `${windows}${notice ? `<p class="usage-empty">${escape(notice)}</p>` : ''}${stamp ? `<p class="usage-stamp">${escape(stamp)}${info.stale ? ' · puede haber cambiado' : ''}</p>` : ''}`;
 }
+// Only the CLIs publish Claude/Antigravity quotas; their desktop apps expose none.
+const cliNames = { claude: 'Claude Code', antigravity: 'Antigravity CLI' };
 function currentUsage() {
   const info = usage[target];
-  return `<details class="current-usage"><summary>Uso de la suscripción de ${tools[target].name}${info?.available ? '' : ' · sin lectura actual'}</summary>${usageWindows(info)}<button class="review-link" data-action="usage">Ver las tres suscripciones</button></details>`;
+  const name = tools[target].name;
+  const body =
+    target !== 'codex' && info && !info.windows?.length && !info.error
+      ? `<p class="usage-empty">${name} de escritorio no publica su uso. ${info.connected ? `Aparecerá aquí cuando uses ${cliNames[target]} en la terminal.` : `Solo se puede leer si usas ${cliNames[target]} en la terminal.`}</p>`
+      : usageWindows(info);
+  return `<section class="current-usage" aria-label="Uso de ${name}"><div class="current-usage-heading"><strong>Uso de ${name}</strong><button class="review-link" data-action="usage">Detalles</button></div>${body}</section>`;
 }
 function usagePanel() {
   return Object.entries(tools)
@@ -200,11 +198,7 @@ function usagePanel() {
 }
 function updateUsageViews() {
   const compact = $('.current-usage');
-  if (compact) {
-    const open = compact.open;
-    compact.outerHTML = currentUsage();
-    $('.current-usage').open = open;
-  }
+  if (compact) compact.outerHTML = currentUsage();
   if ($('#usage-dialog').open) $('#usage-content').innerHTML = usagePanel();
   const windows = usage[target]?.windows || [];
   const first = windows.find(
@@ -213,7 +207,7 @@ function updateUsageViews() {
       w.usedPercent != null &&
       (w.resetsAt == null || w.resetsAt * 1000 > Date.now()),
   );
-  const button = $('[data-action="usage"]');
+  const button = $('#usage-button');
   if (button) {
     const previous = usage[target]?.stale || usage[target]?.status === 'error';
     button.textContent = first
@@ -255,13 +249,11 @@ function continuation(p) {
     )
     .join(
       '',
-    )}</div><label class="model-picker">Modelo para elegir en ${tool.name}<select id="continuation-model">${modelOptions(p.preferredModel)}</select></label><p class="model-guidance">Mid recomendado. Esta elección no cambia el modelo dentro de la otra aplicación.</p>${installed ? `<button class="primary continue-button" data-action="continue" ${hasContext(p) ? '' : 'disabled'}>${icon('external')} Copiar contexto y abrir ${tool.name}</button>` : `<button class="primary continue-button" data-configure="${target}">${icon('folder')} Seleccionar aplicación de ${tool.name}</button>`}<p class="continue-help">${hasContext(p) ? `Después de abrir ${tool.name}, elige el chat donde continuar y pega el contexto con Ctrl+V (⌘V en Mac).` : 'Añade un resumen o guarda instrucciones del proyecto para poder continuar.'}</p><div class="continue-status" role="status">${escape(continuationStatus.get(p.id) || '')}</div><button class="review-link" data-action="preview" ${hasContext(p) ? '' : 'disabled'}>Revisar lo que se copiará</button>${currentUsage()}<details class="copy-options"><summary>Opciones de copia y exportación</summary><label><input id="include-folder" type="checkbox" ${includeFolder ? 'checked' : ''} ${p.folder ? '' : 'disabled'}> Incluir ruta de carpeta (no adjunta archivos)</label>${p.messages.length ? `<label><input id="include-history" type="checkbox" ${includeHistory ? 'checked' : ''}> Incluir textos de versiones anteriores</label>` : ''}<div class="workflow-actions"><button class="secondary" data-action="copy" ${hasContext(p) ? '' : 'disabled'}>Solo copiar contexto</button><button class="secondary" data-action="export-handoff" ${hasContext(p) ? '' : 'disabled'}>Exportar Markdown</button></div></details></section>`;
+    )}</div>${currentUsage()}<label class="model-picker">Modelo que usarás en ${tool.name}<select id="continuation-model">${modelOptions(p.preferredModel)}</select></label><p class="model-guidance">Solo es un recordatorio: elígelo también dentro de ${tool.name}.</p>${installed ? `<button class="primary continue-button" data-action="continue" ${hasContext(p) ? '' : 'disabled'}>${icon('external')} Copiar contexto y abrir ${tool.name}</button>` : `<button class="primary continue-button" data-configure="${target}">${icon('folder')} Seleccionar aplicación de ${tool.name}</button>`}<p class="continue-help">${hasContext(p) ? `Después, elige el chat en ${tool.name} y pega con Ctrl+V (⌘V en Mac).` : 'Primero pega el resumen de tu chat.'}</p><div class="continue-status" role="status">${escape(continuationStatus.get(p.id) || '')}</div><button class="review-link" data-action="preview" ${hasContext(p) ? '' : 'disabled'}>Revisar lo que se copiará</button><details class="copy-options"><summary>Opciones de copia y exportación</summary><label><input id="include-folder" type="checkbox" ${includeFolder ? 'checked' : ''} ${p.folder ? '' : 'disabled'}> Incluir ruta de carpeta (no adjunta archivos)</label>${p.messages.length ? `<label><input id="include-history" type="checkbox" ${includeHistory ? 'checked' : ''}> Incluir textos de versiones anteriores</label>` : ''}<div class="workflow-actions"><button class="secondary" data-action="copy" ${hasContext(p) ? '' : 'disabled'}>Solo copiar contexto</button><button class="secondary" data-action="export-handoff" ${hasContext(p) ? '' : 'disabled'}>Exportar Markdown</button></div></details></section>`;
 }
 function context(p) {
-  const draft = contextDrafts.get(p.id) || p;
-  const base = p.importedContext
-    ? `<details class="import-preview saved-context"><summary>plm.md · ${contextText(p.importedContext).lines} / 500 líneas · contexto importado</summary><pre>${escape(p.importedContext)}</pre></details>`
-    : '';
+  const draft = { ...p, ...contextDrafts.get(p.id) };
+  const saved = !!p.importedContext;
   const revisions = p.contextRevisions.length
     ? `<details class="context-versions"><summary>Versiones anteriores del contexto · ${p.contextRevisions.length} / 10</summary>${[
         ...p.contextRevisions,
@@ -275,28 +267,25 @@ function context(p) {
           '',
         )}<p>Se guardan las diez últimas versiones no vacías. Restaurar conserva también el contexto que tienes ahora.</p></details>`
     : '';
-  const workflow = `<section class="context-workflow" aria-labelledby="summary-title"><span class="step-number">1</span><h2 id="summary-title">${p.importedContext ? 'Tu resumen del proyecto' : 'Añade el resumen de tu conversación'}</h2><p>${p.importedContext ? 'Actualízalo cuando avances en cualquiera de las aplicaciones.' : 'Pide a la IA de tu chat actual un resumen plm.md y añádelo aquí.'}</p>${p.importedContext ? `<div class="summary-state">${contextText(p.importedContext).lines} / 500 líneas · Resumen guardado</div>` : ''}<div class="workflow-actions"><button class="${p.importedContext ? 'secondary' : 'primary'}" data-action="update-context">${icon('upload')} ${p.importedContext ? 'Actualizar resumen' : 'Añadir plm.md'}</button><button class="secondary" data-action="paste-current-context">Pegar resumen</button></div><button class="review-link" data-action="copy-context-request">${icon('copy')} Copiar petición para obtener el resumen</button>${base}</section>`;
-  return `<div class="journey-grid ${hasContext(p) ? 'ready' : ''}">${workflow}${continuation(p)}</div><details class="project-notes"><summary>Editar instrucciones y datos del proyecto</summary><form id="context-form" class="context-form"><label>Nombre de la conversación<input name="name" value="${escape(draft.name)}" maxlength="120" required></label><label>Contexto duro<textarea name="goal" rows="3" maxlength="20000" placeholder="ejemplos: En cada mensaje de esta conversacion se usara git para especificar que se ha hecho en cada prompt.">${escape(draft.goal)}</textarea></label><label>Decisiones tomadas<textarea name="decisions" rows="4" maxlength="100000" placeholder="Qué habéis decidido y por qué">${escape(draft.decisions)}</textarea></label><label>Próximos pasos<textarea name="nextSteps" rows="4" maxlength="100000" placeholder="Qué debería hacer la siguiente herramienta">${escape(draft.nextSteps)}</textarea></label><div class="form-actions"><span>Guarda los cambios antes de preparar un traspaso.</span><button type="submit" class="primary">Guardar contexto ${icon('arrow')}</button></div></form></details>${revisions}${archive(p)}<details class="transfer-history"><summary>Historial de copias y exportaciones · ${p.handoffs.length}</summary>${activity(p)}</details>`;
+  const workflow = `<section class="context-workflow" aria-labelledby="summary-title"><span class="step-number">1</span><h2 id="summary-title">${saved ? 'Tu resumen del proyecto' : 'Trae el resumen de tu chat'}</h2>${saved ? `<details class="import-preview saved-context"><summary>Ver resumen · ${contextText(p.importedContext).lines} / 500 líneas · ${formatDate(p.updatedAt)}</summary><pre>${escape(p.importedContext)}</pre></details><p>Cuando avances en otra aplicación, pide un resumen nuevo y pégalo aquí. La versión anterior se guarda.</p>` : requestSteps}<div class="workflow-actions"><button class="secondary" data-action="copy-context-request">${icon('copy')} Copiar petición</button><button class="${saved ? 'secondary' : 'primary'}" data-action="paste-current-context">Pegar resumen</button><button class="secondary" data-action="update-context">${icon('upload')} Abrir plm.md</button></div></section>`;
+  // Decisions and next steps predate plm.md; keep them editable only where they already hold text.
+  const legacyFields = ['decisions', 'nextSteps']
+    .filter((key) => p[key] || draft[key])
+    .map(
+      (key) =>
+        `<label>${key === 'decisions' ? 'Decisiones tomadas' : 'Próximos pasos'}<textarea name="${key}" rows="4" maxlength="100000">${escape(draft[key])}</textarea></label>`,
+    )
+    .join('');
+  return `<div class="journey-grid ${hasContext(p) ? 'ready' : ''}">${workflow}${continuation(p)}</div><details class="project-notes"><summary>Instrucciones fijas y nombre</summary><form id="context-form" class="context-form"><label>Nombre de la conversación<input name="name" value="${escape(draft.name)}" maxlength="120" required></label><label>Contexto duro<textarea name="goal" rows="3" maxlength="20000" placeholder="ejemplos: En cada mensaje de esta conversacion se usara git para especificar que se ha hecho en cada prompt.">${escape(draft.goal)}</textarea></label>${legacyFields}<div class="form-actions"><span>Se añade siempre al contexto que copias.</span><button type="submit" class="primary">Guardar contexto ${icon('arrow')}</button></div></form></details>${revisions}${archive(p)}`;
 }
-function activity(p) {
-  return `<div class="activity-list">${
-    p.handoffs.length
-      ? [...p.handoffs]
-          .reverse()
-          .map(
-            (h) =>
-              `<article class="activity"><div class="activity-icon">${icon(h.kind === 'copied' ? 'copy' : 'download')}</div><div><strong>Contexto ${h.kind === 'copied' ? 'copiado' : 'exportado'} para ${tools[h.provider].name}</strong><p>${formatDate(h.createdAt)}</p><small>Este registro no confirma el envío ni la lectura en la otra aplicación.</small></div></article>`,
-          )
-          .join('')
-      : '<div class="empty-activity">Todavía no has preparado ningún traspaso.<br>Los contextos copiados o exportados aparecerán aquí.</div>'
-  }</div>`;
-}
+const requestSteps =
+  '<ol class="summary-steps"><li>Copia la petición y pégala en el chat que quieres continuar.</li><li>Copia la respuesta de la IA.</li><li>Pulsa <strong>Pegar resumen</strong> y revísala.</li></ol>';
 function render() {
   const p = current();
   const openedNotes =
     $('.work-panel')?.dataset.projectId === p?.id && $('#context-form')?.closest('details')?.open;
   $('#app').innerHTML =
-    `${sidebar()}<main class="main"><header class="topbar"><div><button class="nav-toggle secondary" data-action="navigation" aria-label="Abrir navegación">☰</button><span>${p?.folder ? 'Carpeta' : 'Proyectos'}</span><span class="breadcrumb">/</span><strong>${p?.folder ? escape(p.folder.split(/[\\/]/).filter(Boolean).pop()) : 'Sin carpeta'}</strong></div><div class="header-actions"><button class="secondary" data-action="usage" aria-label="Uso de suscripciones">Uso y límites</button><button class="secondary" data-action="applications">${icon('external')} Aplicaciones</button></div></header><div class="workspace-content"><div class="page-heading"><h1>${p ? escape(p.name) : 'Tu proyecto, en las tres aplicaciones'}</h1>${p?.folder ? `<button class="secondary" data-new-conversation="${escape(p.id)}">${icon('plus')} Nueva conversación</button>` : ''}</div><p class="product-purpose">PLM guarda el resumen de tu proyecto para continuar entre Codex, Claude y Antigravity. Trabajas y recibes respuestas en sus aplicaciones originales.</p>${p ? `<section class="work-panel" data-project-id="${escape(p.id)}"><div class="workspace-body">${context(p)}</div><div class="project-footer"><button data-action="reveal-folder" ${p.folder ? '' : 'disabled'}>${icon('folder')} ${p.folder ? 'Abrir carpeta' : 'Sin carpeta'}</button><button data-action="export-project">${icon('download')} Exportar proyecto</button><button data-action="delete-project" class="delete-project">Eliminar de PLM</button></div></section>` : `<section class="welcome-panel"><h2>Trae el resumen y elige dónde seguir.</h2><p>Añade un plm.md o pega su contenido. PLM lo prepara para que lo lleves a la siguiente aplicación.</p><div class="workflow-actions"><button class="primary" data-action="choose-context">Añadir plm.md</button><button class="secondary" data-action="paste-context">Pegar resumen</button><button class="secondary" data-action="new">Nuevo proyecto</button></div><button class="review-link" data-action="copy-context-request">Copiar petición para obtener el resumen</button></section>`}</div></main>`;
+    `${sidebar()}<main class="main"><header class="topbar"><div><button class="nav-toggle secondary" data-action="navigation" aria-label="Abrir navegación">☰</button>${p?.folder ? `<span title="${escape(p.folder)}">${icon('folder')} ${escape(p.folder.split(/[\\/]/).filter(Boolean).pop())}</span>` : ''}</div><div class="header-actions"><button id="usage-button" class="secondary" data-action="usage" aria-label="Uso de suscripciones">Uso y límites</button><button class="secondary" data-action="applications">${icon('external')} Aplicaciones</button></div></header><div class="workspace-content"><div class="page-heading"><h1>${p ? escape(p.name) : 'Tu proyecto, en las tres aplicaciones'}</h1></div>${p ? `<section class="work-panel" data-project-id="${escape(p.id)}"><div class="workspace-body">${context(p)}</div><div class="project-footer"><button data-action="reveal-folder" ${p.folder ? '' : 'disabled'}>${icon('folder')} ${p.folder ? 'Abrir carpeta' : 'Sin carpeta'}</button><button data-action="export-project">${icon('download')} Exportar proyecto</button><button data-action="delete-project" class="delete-project">Eliminar de PLM</button></div></section>` : `<p class="product-purpose">PLM guarda el resumen de tu proyecto para continuar entre Codex, Claude y Antigravity. Trabajas y recibes respuestas en sus aplicaciones originales.</p><section class="welcome-panel"><h2>Trae el resumen de tu chat</h2>${requestSteps}<div class="workflow-actions"><button class="secondary" data-action="copy-context-request">${icon('copy')} Copiar petición</button><button class="primary" data-action="paste-context">Pegar resumen</button><button class="secondary" data-action="choose-context">${icon('upload')} Abrir plm.md</button></div><button class="review-link" data-action="new">O crea un proyecto vacío</button></section>`}</div></main>`;
   if (openedNotes && $('.project-notes')) $('.project-notes').open = true;
   if ($('#applications-dialog').open) $('#applications-content').innerHTML = providerCards();
   updateUsageViews();
@@ -304,19 +293,17 @@ function render() {
 function showContextImport(file) {
   pendingContext = file;
   $('#context-import-title').textContent = file.targetId
-    ? 'Actualizar el contexto de esta conversación'
-    : 'Elige el modelo para continuar';
+    ? 'Revisa el resumen nuevo'
+    : 'Revisa el resumen';
   $('#context-file-info').textContent =
-    `${file.filename} · ${file.lines} / 500 líneas. ${file.targetId ? 'Se conserva el contexto duro y se guarda una versión anterior recuperable.' : 'Revisa el contexto y elige con qué modelo continuar.'}`;
+    `${file.filename} · ${file.lines} / 500 líneas. ${file.targetId ? 'Sustituye al resumen actual; el anterior queda en las versiones guardadas.' : 'Se creará una conversación nueva con este resumen.'}`;
   const name = $('#context-import-form [name="name"]');
   name.value = file.name;
   name.readOnly = !!file.targetId;
   $('#context-import-form [type="submit"]').textContent = file.targetId
     ? 'Actualizar contexto'
     : 'Importar contexto';
-  $('#import-model').innerHTML = modelOptions(file.model || DEFAULT_MODEL);
   $('#import-context-content').textContent = file.content;
-  $('#context-dialog .import-preview').open = false;
   $('#toast').className = '';
   $('#context-dialog').showModal();
 }
@@ -332,12 +319,15 @@ function openProjectDialog(parent = null) {
   $('#project-form').reset();
   $('#project-dialog-title').textContent = parent ? 'Nueva conversación' : 'Nuevo proyecto';
   $('#project-form [type="submit"]').textContent = parent ? 'Crear conversación' : 'Crear proyecto';
-  $('#project-form .scope-options').hidden = !!parent;
-  $('#project-folder-selection').hidden = true;
-  $('#chosen-folder').textContent = 'Sin carpeta seleccionada';
+  $('#project-folder-selection').hidden = !!parent;
+  showChosenFolder();
   $('#conversation-folder-info').textContent = parent ? `En la carpeta: ${parent.folder}` : '';
   $('#conversation-folder-info').hidden = !parent;
   $('#project-dialog').showModal();
+}
+function showChosenFolder() {
+  $('#chosen-folder').textContent = chosenFolder || 'Sin carpeta';
+  $('#project-form [data-action="clear-folder"]').hidden = !chosenFolder;
 }
 const options = () => ({ includeHistory, includeFolder });
 function requireSavedContext() {
@@ -345,7 +335,9 @@ function requireSavedContext() {
   const draft = contextDrafts.get(project?.id);
   if (
     draft &&
-    ['name', 'goal', 'decisions', 'nextSteps'].some((key) => draft[key]?.trim() !== project[key])
+    ['name', 'goal', 'decisions', 'nextSteps'].some(
+      (key) => key in draft && draft[key].trim() !== project[key],
+    )
   ) {
     throw new Error('Guarda los cambios de las instrucciones del proyecto antes de continuar.');
   }
@@ -428,6 +420,7 @@ document.addEventListener('click', (event) => {
             : MODELS.find((item) => item.provider === provider && item.tier === 'mid').id,
         );
         await refresh();
+        void loadUsage();
         return;
       }
       if (button.dataset.launch) {
@@ -480,8 +473,12 @@ document.addEventListener('click', (event) => {
           button.closest('dialog')?.close();
           break;
         case 'choose-folder':
-          chosenFolder = await api.chooseFolder();
-          $('#chosen-folder').textContent = chosenFolder || 'Sin carpeta seleccionada';
+          chosenFolder = (await api.chooseFolder()) || chosenFolder;
+          showChosenFolder();
+          break;
+        case 'clear-folder':
+          chosenFolder = '';
+          showChosenFolder();
           break;
         case 'preview':
           requireSavedContext();
@@ -504,7 +501,6 @@ document.addEventListener('click', (event) => {
               message + (result.recordError ? ' No se pudo guardar el registro de la copia.' : ''),
             );
             await refresh();
-            toast(message, !result.started);
           } finally {
             button.disabled = false;
           }
@@ -539,12 +535,15 @@ document.addEventListener('click', (event) => {
           break;
         }
         case 'paste-context':
-          openPasteDialog();
+        case 'paste-current-context': {
+          const targetId = button.dataset.action === 'paste-current-context' ? selected : null;
+          if (targetId) requireSavedContext();
+          // Read the clipboard directly; the text box is only a fallback when it is empty.
+          const staged = await api.pasteContext(targetId);
+          if (staged) showContextImport(staged);
+          else openPasteDialog(targetId);
           break;
-        case 'paste-current-context':
-          requireSavedContext();
-          openPasteDialog(selected);
-          break;
+        }
         case 'restore-project': {
           const project = await api.importProject();
           if (project) {
@@ -615,14 +614,6 @@ document.addEventListener('keydown', (event) => {
   }
 });
 document.addEventListener('change', (event) => {
-  if (event.target.form?.id === 'project-form' && event.target.name === 'scope') {
-    const withFolder = event.target.value === 'folder';
-    $('#project-folder-selection').hidden = !withFolder;
-    if (!withFolder) {
-      chosenFolder = '';
-      $('#chosen-folder').textContent = 'Sin carpeta seleccionada';
-    }
-  }
   if (event.target.id === 'continuation-model') {
     const control = event.target;
     control.disabled = true;
@@ -652,6 +643,20 @@ function rememberDraft(event) {
   if (form?.id === 'context-form')
     contextDrafts.set(selected, Object.fromEntries(new FormData(form)));
 }
+// Ctrl+V outside a text field brings in a new summary, the same as "Pegar resumen".
+document.addEventListener('paste', (event) => {
+  if (
+    document.querySelector('dialog[open]') ||
+    event.target.closest?.('input, textarea, select, [contenteditable]')
+  )
+    return;
+  const button = $(
+    current() ? '[data-action="paste-current-context"]' : '[data-action="paste-context"]',
+  );
+  if (!button) return;
+  event.preventDefault();
+  button.click();
+});
 document.addEventListener('input', (event) => {
   rememberDraft(event);
   if (event.target.id === 'pasted-context') {
@@ -687,7 +692,7 @@ document.addEventListener('submit', (event) => {
         const project = await api.importContext({
           token: pendingContext.token,
           name: input.name,
-          model: input.model,
+          model: pendingContext.model || current()?.preferredModel || DEFAULT_MODEL,
         });
         pendingContext = null;
         selected = project.id;
@@ -705,7 +710,7 @@ document.addEventListener('submit', (event) => {
       if (form.id === 'project-form') {
         const project = await api.createProject({
           ...input,
-          scope: parentProject ? 'folder' : input.scope,
+          scope: chosenFolder ? 'folder' : 'conversation',
           folder: chosenFolder,
           parentId: parentProject,
         });
@@ -718,7 +723,8 @@ document.addEventListener('submit', (event) => {
       }
       if (form.id === 'context-form') {
         const id = selected;
-        await api.updateProject(id, input);
+        const { decisions, nextSteps } = current();
+        await api.updateProject(id, { decisions, nextSteps, ...input });
         continuationStatus.delete(id);
         contextDrafts.delete(id);
         await refresh();

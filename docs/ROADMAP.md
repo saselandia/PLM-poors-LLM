@@ -70,3 +70,11 @@ Configurar CI en macOS, Windows y Linux para pruebas del núcleo y empaquetado. 
 - [x] Estados sin datos, lectura anterior y ventana vencida; nunca inventar porcentajes.
 - [x] Pruebas sintéticas del protocolo y recolectores; lectura real de Codex.
 - [ ] Validar las exportaciones de cuotas con las cuentas y versiones reales de Claude Code y Antigravity CLI.
+
+## 0.7 — Menos pasos, menos ruido
+
+- [x] Pegar resumen lee el portapapeles directamente; Ctrl+V en la ventana hace lo mismo. Cuadro manual solo si está vacío.
+- [x] Revisión del resumen sin selector de modelo; el contenido se muestra completo.
+- [x] Uso de la suscripción visible al elegir cada aplicación, con explicación clara cuando su app de escritorio no publica la cuota.
+- [x] Retirados de la interfaz: menú lateral Importar contexto, botón lateral Aplicaciones, ruta de la cabecera, texto de propósito repetido, historial de copias, opciones de alcance al crear y campos heredados vacíos.
+- [ ] Lectura del uso de Claude Desktop y Antigravity solo si sus proveedores publican una vía oficial.

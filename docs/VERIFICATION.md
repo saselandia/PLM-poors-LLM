@@ -75,3 +75,10 @@ El CI verifica el núcleo en los tres sistemas. La interfaz y los lanzadores en 
 - Recolector: JSON sintético con campos privados; archivo persistido contiene solo cuotas, no correo, credenciales o transcripción.
 - Escritorio: activar la conexión de Claude en home temporal, ejecutar el recolector con Electron, mostrar 52 % usado y 48 % restante de prueba, actualizar, desconectar y cerrar con Esc. No se han usado modelos de Claude o Antigravity ni se han modificado configuraciones personales durante estas pruebas.
 - Lecturas reales de Claude y Antigravity aún no verificadas con cuentas autenticadas; el mecanismo depende de que el CLI oficial publique su statusLine compatible. Las pruebas nativas de macOS/Windows siguen pendientes.
+
+## Simplificación 0.7.0
+
+- Núcleo: 30 pruebas y comprobación de sintaxis correctas.
+- Escritorio con perfil temporal y portapapeles simulado: Pegar resumen desde el portapapeles, rechazo de 501 líneas y de la petición copiada, cuadro manual con portapapeles vacío, Ctrl+V fuera de campos de texto, revisión y cancelación sin escrituras.
+- Franja de uso: Codex al cargar y mensaje de Claude de escritorio sin datos al cambiar de destino; panel completo, conexión y desconexión de Claude Code sin cambios.
+- Creación con carpeta opcional, conversaciones en carpeta, importación JSON desde la barra lateral, archivo heredado escapado, versiones, conflictos, Esc, persistencia y acción principal visible a 1440, 1024 y 480 px.

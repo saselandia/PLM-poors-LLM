@@ -49,10 +49,10 @@ async function choose(file) {
     dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [file] });
   }, file);
 }
+// "Pegar resumen" reads the clipboard directly, as after copying the AI's reply.
 async function paste(content) {
+  await desktop.evaluate(({ clipboard }, text) => clipboard.writeText(text), content);
   await page.getByRole('button', { name: 'Pegar resumen', exact: true }).click();
-  await page.getByRole('textbox', { name: 'Contenido de plm.md', exact: true }).fill(content);
-  await page.getByRole('button', { name: 'Revisar contexto pegado', exact: true }).click();
 }
 async function saveImport(update = false) {
   await page
@@ -82,23 +82,16 @@ try {
   );
   await page.locator('.new-project').click();
   await page.locator('#project-form [name="name"]').fill('PLM — poors LLM');
-  await page.locator('#project-form [name="goal"]').fill('Conservar las instrucciones y usar Git.');
-  assert.equal(
-    await page.getByRole('radio', { name: 'Solo una conversación', exact: true }).isChecked(),
-    true,
-  );
-  await page.getByRole('radio', { name: 'Carpeta con esta conversación', exact: true }).check();
-  await page.locator('#project-form [type="submit"]').click();
-  await page.getByRole('status').filter({ hasText: 'Elige una carpeta' }).waitFor();
-  assert.equal((await page.evaluate(() => window.plm.workspace())).projects.length, 0);
+  await page.locator('#project-form [name="goal"]').fill('Conservar las instrucciones.');
+  assert.equal(await page.locator('#chosen-folder').textContent(), 'Sin carpeta');
   await choose(directory);
   await page.getByRole('button', { name: 'Elegir carpeta', exact: true }).click();
   await page.locator('#project-form [type="submit"]').click();
   await page.getByRole('heading', { name: 'PLM — poors LLM', exact: true }).waitFor();
   assert.equal(await page.locator('#message-form').count(), 0);
   await notes();
-  await page.locator('#context-form [name="decisions"]').fill('Usar las aplicaciones originales.');
-  await page.locator('#context-form [name="nextSteps"]').fill('Revisar hello.mjs.');
+  assert.equal(await page.locator('#context-form [name="decisions"]').count(), 0);
+  await page.locator('#context-form [name="goal"]').fill('Conservar las instrucciones y usar Git.');
   await page.getByRole('button', { name: 'Revisar lo que se copiará', exact: true }).click();
   await page.getByRole('status').filter({ hasText: 'Guarda los cambios' }).waitFor();
   await page.getByRole('button', { name: 'Guardar contexto', exact: true }).click();
@@ -108,14 +101,18 @@ try {
   // Paste/file import has a review step; cancellation must never create/update a project.
   await paste('Dato\n'.repeat(501));
   await page.getByRole('status').filter({ hasText: '501 líneas' }).waitFor();
+  await page.getByRole('button', { name: 'Copiar petición', exact: true }).click();
+  await page.getByRole('button', { name: 'Pegar resumen', exact: true }).click();
+  await page.getByRole('status').filter({ hasText: 'tiene la petición' }).waitFor();
+  // An empty clipboard falls back to a text box with the same review step.
+  await paste('');
   await page
     .getByRole('textbox', { name: 'Contenido de plm.md', exact: true })
     .fill('# Resumen A\nEstado confirmado A.');
   await page.getByRole('button', { name: 'Revisar contexto pegado', exact: true }).click();
-  assert.equal(await page.locator('#import-model').inputValue(), 'terra');
-  await page.locator('#context-dialog .import-preview > summary').click();
-  await page.keyboard.press('Escape');
-  assert.equal(await page.locator('#context-dialog').isVisible(), true);
+  assert.ok(
+    (await page.locator('#import-context-content').textContent()).includes('Estado confirmado A.'),
+  );
   await page.keyboard.press('Escape');
   await page.locator('#context-dialog').waitFor({ state: 'hidden' });
   assert.equal((await page.evaluate(() => window.plm.workspace())).projects[0].importedContext, '');
@@ -154,8 +151,13 @@ try {
   await page.keyboard.press('Escape');
   await page.locator('#preview-dialog').waitFor({ state: 'hidden' });
 
+  assert.ok((await page.locator('.current-usage').textContent()).includes('Uso de Codex'));
   await page.locator('[data-target="claude"]').click();
   assert.equal(await page.locator('#continuation-model').inputValue(), 'haiku');
+  await page
+    .locator('.current-usage')
+    .filter({ hasText: 'Claude de escritorio no publica su uso' })
+    .waitFor();
   await page.locator('#continuation-model').selectOption('flash');
   await page.getByRole('status').filter({ hasText: 'Destino guardado' }).waitFor();
   assert.equal(
@@ -264,8 +266,7 @@ try {
   ];
   await writeFile(exportPath, JSON.stringify(exported));
   await choose(exportPath);
-  await page.locator('.context-import-menu > summary').click();
-  await page.getByRole('button', { name: 'Restaurar copia JSON', exact: true }).click();
+  await page.getByRole('button', { name: 'Importar proyecto (.json)', exact: true }).click();
   await page.getByRole('status').filter({ hasText: 'Proyecto importado' }).waitFor();
   assert.equal(await page.locator('#message-form').count(), 0);
   await page.locator('.legacy-archive > summary').click();
@@ -356,10 +357,10 @@ try {
   const contextPath = path.join(directory, 'plm.md');
   await choose(contextPath);
   await writeFile(contextPath, 'Dato\n'.repeat(501));
-  await page.getByRole('button', { name: 'Actualizar resumen', exact: true }).click();
+  await page.getByRole('button', { name: 'Abrir plm.md', exact: true }).click();
   await page.getByRole('status').filter({ hasText: '501 líneas' }).waitFor();
   await writeFile(contextPath, '# Archivo\nResumen desde archivo.');
-  await page.getByRole('button', { name: 'Actualizar resumen', exact: true }).click();
+  await page.getByRole('button', { name: 'Abrir plm.md', exact: true }).click();
   assert.equal(
     await page.locator('#context-import-form [name="name"]').getAttribute('readonly'),
     '',
@@ -370,17 +371,20 @@ try {
   assert.equal(state.projects[0].id, firstId);
   assert.ok(state.projects[0].goal.includes('Cambio concurrente.'));
   assert.equal(state.projects[0].importedContext, '# Archivo\nResumen desde archivo.');
+  await desktop.evaluate(({ clipboard }) => clipboard.writeText('# Atajo\nPegado con Ctrl+V.'));
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press('Control+V');
+  await page.locator('#context-dialog').waitFor();
+  assert.ok((await page.locator('#import-context-content').textContent()).includes('Ctrl+V'));
+  await page.keyboard.press('Escape');
+  await page.locator('#context-dialog').waitFor({ state: 'hidden' });
   await notes();
   await page.locator('#context-form [name="goal"]').fill('Borrador sin guardar');
   await page.getByRole('button', { name: 'Pegar resumen', exact: true }).click();
   await page.getByRole('status').filter({ hasText: 'Guarda los cambios' }).waitFor();
   assert.equal(await page.locator('#paste-context-dialog').isVisible(), false);
-  await page.locator('.context-import-menu > summary').click();
-  await page.locator('.request-details > summary').click();
   await page.keyboard.press('Escape');
-  assert.equal(await page.locator('.request-details').evaluate((el) => el.open), false);
-  await page.keyboard.press('Escape');
-  assert.equal(await page.locator('.context-import-menu').evaluate((el) => el.open), false);
+  assert.equal(await page.locator('.project-notes').evaluate((el) => el.open), false);
   assert.equal(
     await page.locator('#context-form [name="goal"]').inputValue(),
     'Borrador sin guardar',

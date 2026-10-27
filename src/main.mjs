@@ -412,6 +412,15 @@ function stageContext(raw, filename, targetId) {
 handle('context:stage', (input) =>
   stageContext(input?.content, 'Contexto pegado', input?.targetId),
 );
+handle('context:paste', (targetId) => {
+  const raw = clipboard.readText();
+  if (!raw.trim()) return null;
+  if (raw.trim() === CONTEXT_REQUEST.trim())
+    throw new Error(
+      'El portapapeles tiene la petición, no el resumen. Pégala en tu chat y copia la respuesta de la IA.',
+    );
+  return stageContext(raw, 'Resumen del portapapeles', targetId || null);
+});
 handle('context:choose', async (targetId) => {
   // Capture the target before the user opens the native picker.
   const target = targetId ? projectFrom(store.snapshot(), targetId) : null;

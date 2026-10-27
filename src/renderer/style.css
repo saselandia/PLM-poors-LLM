@@ -184,53 +184,12 @@ button svg {
   padding: 15px 9px;
   margin-top: 12px;
 }
-.context-import-menu {
-  margin-top: 12px;
-  color: #b7c7ab;
-  min-height: 42px;
-  overflow-y: auto;
-}
-.context-import-menu > summary {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 8px;
-  font-size: 11px;
-  cursor: pointer;
-}
-.context-import-menu > summary > span {
-  margin-left: auto;
-}
-.context-import-menu[open] {
-  border: 1px solid #35432f;
-  border-radius: 7px;
-  background: #171e14;
-}
-.context-import-guide {
-  padding: 0 10px 12px;
-}
-.context-import-guide p {
-  font-size: 11px;
-  line-height: 1.8;
-  color: #99ad8b;
-}
-.context-import-guide button {
-  width: 100%;
-  white-space: normal;
-  line-height: 1.5;
-  font-size: 10px;
-}
-.request-details {
-  margin: 13px 0;
-}
-.request-details summary,
 .import-preview summary {
   cursor: pointer;
   font-size: 11px;
   color: #b8cba9;
   line-height: 1.7;
 }
-.request-details pre,
 .import-preview pre {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -342,9 +301,6 @@ dialog .model-guidance {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-.breadcrumb {
-  color: #465149;
 }
 .local-badge {
   display: flex;
@@ -728,20 +684,6 @@ h1 {
   background: linear-gradient(140deg, #20281d, #171d17 75%);
   padding: 23px 20px;
 }
-.handoff-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  color: #879e74;
-}
-.handoff-heading .eyebrow {
-  font-size: 8px;
-  color: #adbe9d;
-  letter-spacing: 1.6px;
-}
-.handoff-heading svg {
-  width: 15px;
-}
 .handoff-panel h2 {
   font-size: 21px;
   font-weight: 450;
@@ -1035,50 +977,6 @@ dialog textarea::placeholder {
   font-size: 9px;
   line-height: 1.7;
 }
-.activity-list {
-  min-height: 432px;
-  padding: 15px 0;
-}
-.activity {
-  display: flex;
-  gap: 12px;
-  padding: 19px 0;
-  border-bottom: 1px solid #2b3427;
-}
-.activity-icon {
-  background: #283221;
-  padding: 9px;
-  border-radius: 7px;
-  height: 34px;
-  color: #c0d5a9;
-  display: flex;
-}
-.activity-icon svg {
-  width: 15px;
-  height: 15px;
-}
-.activity strong {
-  font-size: 11px;
-  font-weight: 500;
-  color: #c3d1b9;
-}
-.activity p {
-  font-size: 9px;
-  color: #86967c;
-  margin: 7px 0;
-}
-.activity small {
-  font-size: 9px;
-  line-height: 1.8;
-  color: #6f7f65;
-}
-.empty-activity {
-  text-align: center;
-  font-size: 12px;
-  color: #85957b;
-  line-height: 2;
-  padding: 90px 20px;
-}
 .welcome-panel {
   border: 1px solid #303a2c;
   border-radius: 10px;
@@ -1232,44 +1130,6 @@ dialog p {
   border-radius: 6px;
   padding: 11px;
   margin-top: -7px;
-}
-.scope-options {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  border: 0;
-  padding: 0;
-  margin: 0 0 20px;
-}
-.scope-options legend {
-  font-size: 11px;
-  color: #b2c1a7;
-  margin-bottom: 10px;
-}
-.scope-options .scope-option {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  border: 1px solid #3b4735;
-  border-radius: 6px;
-  padding: 12px;
-  margin: 0;
-  background: #171e14;
-  cursor: pointer;
-}
-.scope-options .scope-option:has(input:checked) {
-  border-color: #9ab780;
-  background: #283520;
-  color: #dbeace;
-}
-.scope-options .scope-option input {
-  display: inline-block;
-  width: 14px;
-  height: 14px;
-  margin: 0;
-  padding: 0;
-  accent-color: #c6e5ac;
-  flex-shrink: 0;
 }
 .folder-picker > span {
   font-size: 10px;
@@ -1587,14 +1447,6 @@ body,
   padding-top: 12px;
   margin-top: 14px;
 }
-.context-import-menu {
-  flex-shrink: 0;
-  max-height: 45vh;
-}
-.apps-button {
-  width: 100%;
-  margin-top: 10px;
-}
 .folder-heading {
   width: 100%;
   justify-content: flex-start;
@@ -1752,9 +1604,6 @@ body,
 .handoff-close {
   float: right;
   margin-bottom: 12px;
-}
-.handoff-heading {
-  clear: both;
 }
 .handoff-panel h2 {
   font-size: 18px;
@@ -2087,20 +1936,13 @@ body,
 .review-link:hover {
   text-decoration: underline;
 }
-.summary-state {
-  color: #c6e5ac;
-  font-size: 12px;
-  margin-top: 16px;
-}
 .project-notes,
-.legacy-archive,
-.transfer-history {
+.legacy-archive {
   border-top: 1px solid #34402f;
   padding: 18px 0;
 }
 .project-notes > summary,
 .legacy-archive > summary,
-.transfer-history > summary,
 .copy-options > summary {
   color: #b8c8aa;
   cursor: pointer;
@@ -2186,15 +2028,61 @@ body,
   gap: 8px;
 }
 .current-usage {
-  padding: 12px 0;
-  border-top: 1px solid #415137;
-  margin-top: 10px;
+  margin: 14px 0 4px;
+  padding: 10px 14px;
+  background: #182016;
+  border: 1px solid #34402f;
+  border-radius: 8px;
 }
-.current-usage summary {
+.current-usage-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
   font-size: 12px;
   color: #d1e3c0;
-  cursor: pointer;
+}
+.current-usage-heading strong {
+  font-weight: 500;
+}
+.current-usage-heading .review-link {
+  padding: 2px 0;
+  font-size: 11px;
+}
+.current-usage .usage-window {
+  margin: 8px 0;
+}
+.current-usage .usage-empty,
+.current-usage .usage-stamp {
+  margin: 6px 0 0;
+}
+.summary-steps {
+  margin: 4px 0 18px;
+  padding-left: 20px;
+  color: #b8c8aa;
+  font-size: 12px;
+  line-height: 1.9;
+}
+.import-content {
+  max-height: 42vh;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: #111413;
+  border: 1px solid #34402f;
+  border-radius: 6px;
+  padding: 14px;
+  font-size: 11px;
   line-height: 1.7;
+}
+.sidebar-bottom .backup-link {
+  display: block;
+  margin-top: 4px;
+}
+.topbar > div:first-child > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 .usage-card {
   margin-top: 18px;

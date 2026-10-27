@@ -256,7 +256,7 @@ export function readCodexUsage(
         id: 0,
         method: 'initialize',
         params: {
-          clientInfo: { name: 'plm_usage', title: 'PLM subscription usage', version: '0.6.0' },
+          clientInfo: { name: 'plm_usage', title: 'PLM subscription usage', version: '0.7.0' },
         },
       });
     } catch {

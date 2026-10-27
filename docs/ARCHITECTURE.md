@@ -22,7 +22,7 @@ Un proyecto tiene ID propio, nombre, carpeta local opcional, objetivo, decisione
 
 Los proyectos de PLM y las sesiones de los proveedores son entidades distintas. La interfaz usa un historial común mantenido por el usuario. No se escriben IDs, sesiones o bases internas de otras aplicaciones.
 
-La creación distingue Solo una conversación y Carpeta con esta conversación; la segunda exige una carpeta elegida por el usuario. El tipo se deduce de la vinculación, sin cambiar el esquema. El campo que la interfaz llama Contexto duro conserva la clave `goal` para mantener los datos anteriores, y se incluye con ese título en los traspasos.
+La creación admite una carpeta opcional elegida por el usuario; el tipo (conversación suelta o en carpeta) se deduce de esa vinculación, sin cambiar el esquema. El campo que la interfaz llama Contexto duro conserva la clave `goal` para mantener los datos anteriores, y se incluye con ese título en los traspasos.
 
 Las exportaciones JSON usan `format: plm-project` y `version: 1`. La importación valida el esquema, genera un ID nuevo, descarta propiedades desconocidas y elimina la carpeta local. Las rutas de aplicaciones no forman parte del archivo portable. El Markdown puede excluir el historial y omite la carpeta salvo selección explícita.
 
@@ -68,7 +68,7 @@ La interfaz tiene una sola pantalla con resumen, selección de destino y acción
 
 `handoff:open` valida el proyecto, destino, opciones y lanzador disponible. `copyAndOpen` copia el texto, intenta registrar la copia y solicita abrir la aplicación con el lanzador existente sin argumentos de prompt. Devuelve por separado `copied`, `started`, `error` y `recordError`. Un fallo al copiar impide abrir; un fallo de apertura conserva la copia e informa del problema. Un fallo de persistencia del registro no oculta el resultado del portapapeles o del proceso. `started` solo acredita la creación del proceso, nunca que exista un chat ni se haya enviado texto.
 
-Las instrucciones del proyecto, revisiones, textos archivados e historial de traspasos son desplegables secundarios. El resumen y la acción principal están visibles, con la acción priorizada en ventanas estrechas cuando ya hay contexto.
+Las instrucciones del proyecto, revisiones y textos archivados son desplegables secundarios. Los registros de traspaso se siguen guardando por compatibilidad, pero ya no se muestran. El resumen y la acción principal están visibles, con la acción priorizada en ventanas estrechas cuando ya hay contexto.
 
 ## Cuotas y conexiones locales (0.6)
 
@@ -77,3 +77,7 @@ Las instrucciones del proyecto, revisiones, textos archivados e historial de tra
 Los lectores de Claude y Antigravity solo leen los archivos de cuota propios de PLM. Las conexiones opcionales agregan `statusLine` al settings.json global documentado del CLI: `~/.claude/settings.json` o `~/.gemini/antigravity-cli/settings.json`. El helper ejecuta el Electron instalado en modo Node, procesa el JSON estándar y conserva una lista de campos permitidos. No lee transcripciones ni archivos de cuenta. Si había un comando de barra de estado, recibe exactamente la misma entrada mediante las mismas reglas de shell que usaba el CLI. Esa orden no puede suministrarse mediante IPC del renderer. Se limita su tiempo y salida. La configuración anterior se conserva; desconectar solo restaura si el comando actual sigue siendo el instalado por PLM.
 
 Los campos ausentes son nulos, no ceros. No se infieren porcentajes a partir de context_window ni de remaining_amount sin denominador. Las ventanas vencidas no se presentan como cupo actual y las lecturas de más de cinco minutos se marcan antiguas. Todos los datos de cuota están separados del esquema y de las copias de proyectos. Para perfiles temporales PLM_DATA_DIR, las configuraciones externas se redirigen a un home de pruebas; PLM_DISABLE_USAGE_AUTO=1 impide consultas reales en las pruebas de escritorio.
+
+## Simplificación (0.7)
+
+`context:paste` lee el portapapeles en el proceso principal solo cuando el usuario pulsa **Pegar resumen** o Ctrl+V fuera de un campo de texto, y lo pasa por la misma validación y revisión que `context:stage`. Devuelve `null` si está vacío, y la interfaz abre entonces el cuadro manual. Rechaza el texto si es la propia petición de resumen. El modelo ya no se elige al importar: se conserva el del proyecto o el destino actual.

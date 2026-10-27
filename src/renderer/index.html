@@ -15,11 +15,9 @@
     <dialog id="project-dialog" aria-labelledby="project-dialog-title">
       <form id="project-form">
         <div class="dialog-heading">
-          <span class="eyebrow">UN NUEVO PUNTO DE PARTIDA</span
-          ><button type="button" data-action="close-dialog" aria-label="Cerrar">×</button>
+          <h2 id="project-dialog-title">Nuevo proyecto</h2>
+          <button type="button" data-action="close-dialog" aria-label="Cerrar">×</button>
         </div>
-        <h2 id="project-dialog-title">Crea tu proyecto</h2>
-        <p>Un lugar para el contexto que quieres conservar.</p>
         <label
           >Nombre<input
             name="name"
@@ -37,23 +35,12 @@
           ></textarea>
         </label>
         <p id="conversation-folder-info" hidden></p>
-        <fieldset class="scope-options">
-          <legend>¿Cómo quieres guardar esta conversación?</legend>
-          <label class="scope-option"
-            ><input type="radio" name="scope" value="conversation" checked /><span
-              >Solo una conversación</span
-            ></label
-          >
-          <label class="scope-option"
-            ><input type="radio" name="scope" value="folder" /><span
-              >Carpeta con esta conversación</span
-            ></label
-          >
-        </fieldset>
-        <div id="project-folder-selection" hidden>
-          <label>Carpeta de trabajo</label>
+        <div id="project-folder-selection">
+          <label>Carpeta de trabajo (opcional)</label>
           <div class="folder-picker">
-            <span id="chosen-folder">Sin carpeta seleccionada</span
+            <span id="chosen-folder">Sin carpeta</span
+            ><button type="button" data-action="clear-folder" class="secondary" hidden>
+              Quitar</button
             ><button type="button" data-action="choose-folder" class="secondary">
               Elegir carpeta
             </button>
@@ -67,11 +54,9 @@
     </dialog>
     <dialog id="preview-dialog" class="preview-dialog" aria-labelledby="preview-title">
       <div class="dialog-heading">
-        <span class="eyebrow">CONTEXTO PORTABLE</span
-        ><button type="button" data-action="close-dialog" aria-label="Cerrar">×</button>
+        <h2 id="preview-title">Esto es lo que se copiará</h2>
+        <button type="button" data-action="close-dialog" aria-label="Cerrar">×</button>
       </div>
-      <h2 id="preview-title">Esto es lo que compartirás</h2>
-      <p>Revisa el contenido antes de pegarlo en la otra aplicación.</p>
       <pre id="preview-content"></pre>
       <div class="dialog-footer">
         <button type="button" data-action="close-dialog" class="secondary">Cerrar</button
@@ -96,8 +81,8 @@
           <button type="button" data-action="close-dialog" aria-label="Cerrar">×</button>
         </div>
         <p>
-          Pega el resumen Markdown que has pedido en la aplicación original. Podrás revisarlo antes
-          de guardarlo.
+          El portapapeles está vacío. Pega aquí la respuesta de la IA; podrás revisarla antes de
+          guardarla.
         </p>
         <label
           >Contenido de plm.md<textarea
@@ -122,8 +107,9 @@
         <button data-action="close-dialog" aria-label="Cerrar">×</button>
       </div>
       <p>
-        Cuota de la cuenta conectada en cada CLI. Comprueba que sea la misma que usas en su
-        aplicación de escritorio. Los datos no disponibles no se cuentan como cero.
+        Codex se consulta directamente con su cliente oficial. Claude y Antigravity solo publican su
+        uso desde sus herramientas de terminal (Claude Code y Antigravity CLI); sus aplicaciones de
+        escritorio no lo hacen. Un dato no disponible nunca se muestra como 0 %.
       </p>
       <button id="refresh-usage" class="secondary" data-action="refresh-usage">
         Actualizar uso
@@ -134,28 +120,12 @@
     <dialog id="context-dialog" class="preview-dialog" aria-labelledby="context-import-title">
       <form id="context-import-form">
         <div class="dialog-heading">
-          <span class="eyebrow">CONTEXTO LISTO · SIGUIENTE PASO</span
-          ><button type="button" data-action="close-dialog" aria-label="Cerrar">×</button>
+          <h2 id="context-import-title">Revisa el resumen</h2>
+          <button type="button" data-action="close-dialog" aria-label="Cerrar">×</button>
         </div>
-        <h2 id="context-import-title">Elige el modelo para continuar</h2>
         <p id="context-file-info"></p>
         <label>Nombre de la conversación<input name="name" maxlength="120" required /></label>
-        <label
-          >Modelo para empezar<select
-            name="model"
-            id="import-model"
-            aria-label="Modelo para empezar"
-          ></select
-        ></label>
-        <p class="model-guidance">
-          <strong>Mid es lo recomendado para empezar:</strong> Terra, Gemini Flash, Claude Haiku o
-          Claude Sonnet. Los niveles son una organización de PLM. Elige un modelo disponible en tu
-          cuenta y selecciónalo después en la aplicación oficial.
-        </p>
-        <details class="import-preview">
-          <summary>Revisar plm.md antes de importar</summary>
-          <pre id="import-context-content"></pre>
-        </details>
+        <pre id="import-context-content" class="import-content"></pre>
         <div class="dialog-footer">
           <button type="button" data-action="close-dialog" class="secondary">Cancelar</button
           ><button type="submit" class="primary">Importar contexto ↗</button>

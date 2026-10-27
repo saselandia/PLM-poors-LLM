@@ -30,6 +30,7 @@ contextBridge.exposeInMainWorld(
     copyContextRequest: invoke('context:copy-request'),
     chooseContext: invoke('context:choose'),
     stageContext: invoke('context:stage'),
+    pasteContext: invoke('context:paste'),
     restoreContext: invoke('context:restore'),
     discardContext: invoke('context:discard'),
     importContext: invoke('context:import'),
