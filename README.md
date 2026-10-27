@@ -162,3 +162,9 @@ El empaquetador también admite `pnpm package darwin arm64`, `pnpm package win32
 - [Registro de verificaciones](docs/VERIFICATION.md)
 
 La licencia de distribución del código de PLM está pendiente de definir. Publicar el repositorio para consulta no se presenta como una licencia general de reutilización. Las dependencias y los productos de terceros conservan sus propias licencias; los paquetes deben conservar los avisos de Electron y Chromium.
+
+### Conversaciones dentro de carpetas
+
+La barra lateral agrupa las conversaciones por su carpeta de trabajo. Despliega una carpeta y pulsa **Nueva conversación**, o usa el botón de la cabecera mientras estás en una conversación de esa carpeta. Cada conversación conserva sus propios mensajes y contexto duro. Las conversaciones sin carpeta aparecen por separado. Las carpetas ya vinculadas se reconocen al reiniciar, sin tener que seleccionarlas otra vez.
+
+El chat ocupa el espacio principal y su editor permanece visible. **Continuar en otra app** abre el panel de modelo, revisión y copia del contexto; **Aplicaciones** permite abrir o configurar Codex, Claude y Antigravity. En ventanas estrechas, el botón de navegación abre la lista de carpetas. Eliminar una conversación solo elimina esa conversación de PLM, nunca su carpeta ni las demás conversaciones.

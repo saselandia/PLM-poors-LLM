@@ -36,6 +36,7 @@
             rows="4"
           ></textarea>
         </label>
+        <p id="conversation-folder-info" hidden></p>
         <fieldset class="scope-options">
           <legend>¿Cómo quieres guardar esta conversación?</legend>
           <label class="scope-option"
@@ -76,6 +77,17 @@
         <button type="button" data-action="close-dialog" class="secondary">Cerrar</button
         ><button type="button" data-action="copy" class="primary">Copiar contexto ↗</button>
       </div>
+    </dialog>
+    <dialog id="applications-dialog" class="preview-dialog" aria-labelledby="applications-title">
+      <div class="dialog-heading">
+        <h2 id="applications-title">Tus aplicaciones</h2>
+        <button data-action="close-dialog" aria-label="Cerrar">×</button>
+      </div>
+      <p>Abre cada aplicación con tu propia cuenta. Aquí puedes configurar su ubicación.</p>
+      <div id="applications-content"></div>
+      <button class="secondary" data-action="refresh-providers">
+        Volver a detectar aplicaciones
+      </button>
     </dialog>
     <div id="toast" role="status" aria-live="polite"></div>
     <dialog id="context-dialog" class="preview-dialog" aria-labelledby="context-import-title">

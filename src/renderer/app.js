@@ -48,6 +48,11 @@ let includeHistory = true,
   includeFolder = false,
   toastTimer;
 let pendingContext = null;
+let parentProject = null;
+let handoffOpen = false;
+let navigationOpen = false;
+const collapsedFolders = new Set();
+const scrollPositions = new Map();
 const contextDrafts = new Map(),
   composerDrafts = new Map(),
   pending = new Set();
@@ -89,15 +94,39 @@ function modelOptions(selectedModel = DEFAULT_MODEL) {
         .join('')}</optgroup>`,
   ).join('');
 }
+function projectLink(project) {
+  return `<button data-project="${escape(project.id)}" class="project-link ${selected === project.id ? 'active' : ''}" ${selected === project.id ? 'aria-current="page"' : ''}>${icon('chat')}<span>${escape(project.name)}</span></button>`;
+}
 function sidebar() {
-  return `<aside class="sidebar">
-    <div class="brand"><div class="brand-symbol">p<span>l</span>m</div><span class="version">LAB 0.2</span></div>
+  const groups = new Map();
+  for (const project of workspace.projects) {
+    if (project.folder) {
+      if (!groups.has(project.folder)) groups.set(project.folder, []);
+      groups.get(project.folder).push(project);
+    }
+  }
+  const folders = [...groups]
+    .map(([folder, projects]) => {
+      const id = projects[0].id;
+      const name = folder.split(/[\\/]/).filter(Boolean).pop() || folder;
+      const open = !collapsedFolders.has(folder);
+      return `<section class="folder-group"><button class="folder-heading" data-folder="${escape(id)}" aria-expanded="${open}" title="${escape(folder)}">${icon('folder')}<span>${escape(name)}</span><small>${projects.length}</small><span>${open ? '⌄' : '›'}</span></button><div class="folder-children" ${open ? '' : 'hidden'}>${projects.map(projectLink).join('')}<button class="folder-new" data-new-conversation="${escape(id)}">${icon('plus')} Nueva conversación</button></div></section>`;
+    })
+    .join('');
+  return `<aside class="sidebar ${navigationOpen ? 'is-open' : ''}">
+    <div class="brand"><div class="brand-symbol">p<span>l</span>m</div><button class="nav-close" data-action="navigation" aria-label="Cerrar navegación">×</button><span class="version">0.3</span></div>
     <div class="brand-caption">poors LLM</div>
     <button class="new-project" data-action="new">${icon('plus')} Nuevo proyecto <span>↗</span></button>
-    <div class="sidebar-section"><span>ESPACIO DE TRABAJO</span><span>${String(workspace.projects.length).padStart(2, '0')}</span></div>
-    <nav aria-label="Proyectos">${workspace.projects.length ? workspace.projects.map((project) => `<button data-project="${escape(project.id)}" class="project-link ${selected === project.id ? 'active' : ''}">${icon('folder')}<span>${escape(project.name)}</span>${selected === project.id ? '<i></i>' : ''}</button>`).join('') : '<p class="sidebar-empty">Tus proyectos aparecerán aquí.</p>'}</nav>
+    <div class="sidebar-section"><span>CARPETAS Y CONVERSACIONES</span><span>${workspace.projects.length}</span></div>
+    <nav aria-label="Proyectos">${folders}${workspace.projects.some((p) => !p.folder) ? '<div class="standalone-label">Sin carpeta</div>' : ''}${workspace.projects
+      .filter((p) => !p.folder)
+      .map(projectLink)
+      .join(
+        '',
+      )}${workspace.projects.length ? '' : '<p class="sidebar-empty">Crea una conversación o importa tu contexto para empezar.</p>'}</nav>
     <details class="context-import-menu"><summary>${icon('upload')} Importar contexto <span>⌄</span></summary><div class="context-import-guide"><p>Pídele a la IA de la conversación que genere <strong>plm.md</strong> con el contexto resumido del proyecto para que otro agente pueda continuar bien.</p><p><strong>Máximo 500 líneas.</strong> Incluye objetivo, decisiones, estado actual y próximos pasos.</p><button class="secondary" data-action="copy-context-request">${icon('copy')} Copiar petición para la IA</button><details class="request-details"><summary>Ver la petición completa</summary><pre>${escape(CONTEXT_REQUEST)}</pre></details><button class="primary" data-action="choose-context">${icon('upload')} Añadir plm.md</button><p>Después podrás elegir el modelo. Empieza por <strong>Mid</strong>.</p><button class="backup-link" data-action="restore-project">Restaurar copia JSON</button></div></details>
-    <div class="sidebar-bottom"><div class="local-dot"></div><div>Tu espacio, en tu equipo.<small>Sin cuenta de PLM · Sin nube</small></div></div>
+    <button class="apps-button secondary" data-action="applications">${icon('layers')} Aplicaciones</button>
+    <div class="sidebar-bottom"><div class="local-dot"></div><div>Guardado en este equipo</div></div>
   </aside>`;
 }
 function providerCards() {
@@ -110,7 +139,7 @@ function providerCards() {
 }
 function conversation(p) {
   const draft = composerDrafts.get(p.id) || { content: '', role: 'user', provider: 'codex' };
-  return `<div class="conversation-body">${p.messages.length ? p.messages.map((m) => `<article class="message"><div class="message-avatar ${m.role === 'user' ? 'user' : m.provider}">${m.role === 'user' ? 'Tú' : m.role === 'note' ? '↳' : tools[m.provider].mark}</div><div class="message-content"><div class="message-meta"><strong>${m.role === 'user' ? 'Tú' : m.role === 'note' ? 'Nota de trabajo' : tools[m.provider].name}</strong><span>${formatDate(m.createdAt)}</span><button data-remove-message="${escape(m.id)}" class="remove-message" aria-label="Eliminar mensaje">×</button></div><p>${escape(m.content)}</p>${m.role === 'assistant' ? '<small class="entry-source">Respuesta añadida manualmente</small>' : ''}</div></article>`).join('') : `<div class="conversation-empty"><div class="empty-orbit">${icon('chat')}</div><h3>Las herramientas cambian.<br>Tu trabajo continúa.</h3><p>Añade una pregunta, una respuesta o una nota.<br>Decide qué contexto llevarte al siguiente paso.</p></div>`}</div>
+  return `<div class="conversation-body" data-conversation="${escape(p.id)}">${p.messages.length ? p.messages.map((m) => `<article class="message"><div class="message-avatar ${m.role === 'user' ? 'user' : m.provider}">${m.role === 'user' ? 'Tú' : m.role === 'note' ? '↳' : tools[m.provider].mark}</div><div class="message-content"><div class="message-meta"><strong>${m.role === 'user' ? 'Tú' : m.role === 'note' ? 'Nota de trabajo' : tools[m.provider].name}</strong><span>${formatDate(m.createdAt)}</span><button data-remove-message="${escape(m.id)}" class="remove-message" aria-label="Eliminar mensaje">×</button></div><p>${escape(m.content)}</p>${m.role === 'assistant' ? '<small class="entry-source">Respuesta añadida manualmente</small>' : ''}</div></article>`).join('') : `<div class="conversation-empty"><div class="empty-orbit">${icon('chat')}</div><h3>Esta conversación está lista</h3><p>Guarda mensajes, respuestas o notas aquí.<br>Usa «Continuar en otra app» para llevarte el contexto.</p></div>`}</div>
     <form id="message-form" class="composer"><textarea name="content" aria-label="Mensaje o nota" placeholder="Añade lo que quieras conservar de esta conversación…" rows="3" maxlength="100000" required>${escape(draft.content)}</textarea><div class="composer-toolbar"><div class="composer-fields"><select name="role" aria-label="Tipo de entrada"><option value="user" ${draft.role === 'user' ? 'selected' : ''}>Mi mensaje</option><option value="assistant" ${draft.role === 'assistant' ? 'selected' : ''}>Respuesta de la herramienta</option><option value="note" ${draft.role === 'note' ? 'selected' : ''}>Nota</option></select><select name="provider" aria-label="Herramienta de origen">${Object.entries(
       tools,
     )
@@ -127,7 +156,7 @@ function context(p) {
   const base = p.importedContext
     ? `<details class="import-preview saved-context"><summary>plm.md · ${contextText(p.importedContext).lines} / 500 líneas · contexto importado</summary><pre>${escape(p.importedContext)}</pre></details>`
     : '';
-  return `${base}<form id="context-form" class="context-form"><label>Nombre del proyecto<input name="name" value="${escape(draft.name)}" maxlength="120" required></label><label>Contexto duro<textarea name="goal" rows="3" maxlength="20000" placeholder="ejemplos: En cada mensaje de esta conversacion se usara git para especificar que se ha hecho en cada prompt.">${escape(draft.goal)}</textarea></label><label>Decisiones tomadas<textarea name="decisions" rows="4" maxlength="100000" placeholder="Qué habéis decidido y por qué">${escape(draft.decisions)}</textarea></label><label>Próximos pasos<textarea name="nextSteps" rows="4" maxlength="100000" placeholder="Qué debería hacer la siguiente herramienta">${escape(draft.nextSteps)}</textarea></label><div class="form-actions"><span>Guarda los cambios antes de preparar un traspaso.</span><button type="submit" class="primary">Guardar contexto ${icon('arrow')}</button></div></form>`;
+  return `${base}<form id="context-form" class="context-form"><label>Nombre de la conversación<input name="name" value="${escape(draft.name)}" maxlength="120" required></label><label>Contexto duro<textarea name="goal" rows="3" maxlength="20000" placeholder="ejemplos: En cada mensaje de esta conversacion se usara git para especificar que se ha hecho en cada prompt.">${escape(draft.goal)}</textarea></label><label>Decisiones tomadas<textarea name="decisions" rows="4" maxlength="100000" placeholder="Qué habéis decidido y por qué">${escape(draft.decisions)}</textarea></label><label>Próximos pasos<textarea name="nextSteps" rows="4" maxlength="100000" placeholder="Qué debería hacer la siguiente herramienta">${escape(draft.nextSteps)}</textarea></label><div class="form-actions"><span>Guarda los cambios antes de preparar un traspaso.</span><button type="submit" class="primary">Guardar contexto ${icon('arrow')}</button></div></form>`;
 }
 function activity(p) {
   return `<div class="activity-list">${
@@ -163,14 +192,32 @@ function handoffPanel(p) {
 }
 function renderRight() {
   const p = current();
-  if (p && $('#handoff-panel')) $('#handoff-panel').innerHTML = handoffPanel(p);
+  if (p && $('#handoff-content')) $('#handoff-content').innerHTML = handoffPanel(p);
 }
 function render() {
+  const previousBody = $('.conversation-body');
+  if (previousBody) scrollPositions.set(previousBody.dataset.conversation, previousBody.scrollTop);
   const p = current();
   $('#app').innerHTML =
-    `${sidebar()}<main class="main"><header class="topbar"><div>${icon('layers')}<span>Workspace</span><span class="breadcrumb">/</span><strong>${p ? escape(p.name) : 'Bienvenido'}</strong></div><div><span class="local-badge"><i></i> Local</span><button class="icon-button" data-action="refresh-providers" title="Volver a detectar aplicaciones" aria-label="Volver a detectar aplicaciones">↻</button></div></header><div class="workspace-content"><div class="page-heading"><div><span class="eyebrow">UN PROYECTO. DISTINTAS PERSPECTIVAS.</span><h1>${p ? escape(p.name) : 'Tu trabajo, sin perder el hilo.'}</h1><p>${p ? 'Un espacio común para lo que construyes con tus herramientas.' : 'Reúne tus proyectos y conserva el contexto entre aplicaciones.'}</p></div>${p ? `<button class="secondary" data-action="export-project">${icon('download')} Exportar proyecto</button>` : '<span class="edition">PLM / EXPERIMENTAL</span>'}</div>${providerCards()}
-      ${p ? `<div class="workspace-grid"><section class="work-panel"><div class="panel-tabs" role="tablist" aria-label="Contenido del proyecto"><button role="tab" data-tab="conversation" aria-selected="${tab === 'conversation'}" class="${tab === 'conversation' ? 'active' : ''}">${icon('chat')} Conversación <span>${p.messages.length}</span></button><button role="tab" data-tab="context" aria-selected="${tab === 'context'}" class="${tab === 'context' ? 'active' : ''}">${icon('edit')} Contexto</button><button role="tab" data-tab="activity" aria-selected="${tab === 'activity'}" class="${tab === 'activity' ? 'active' : ''}">${icon('clock')} Actividad</button></div><div class="tab-content">${tab === 'conversation' ? conversation(p) : tab === 'context' ? context(p) : activity(p)}</div><div class="project-footer"><button data-action="reveal-folder" ${p.folder ? '' : 'disabled'} title="${escape(p.folder)}">${icon('folder')} ${p.folder ? escape(p.folder.split(/[\\/]/).filter(Boolean).pop()) : 'Sin carpeta vinculada'}</button><button data-action="delete-project" class="delete-project">Eliminar proyecto</button></div></section><aside id="handoff-panel" class="handoff-panel">${handoffPanel(p)}</aside></div>` : `<section class="welcome-panel"><div class="welcome-art"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><span class="art-center">plm</span><span class="art-node node-codex">C</span><span class="art-node node-claude">✳</span><span class="art-node node-antigravity">A</span></div><div><span class="eyebrow">CADA IDEA TIENE UN PUNTO DE PARTIDA</span><h2>Empieza un proyecto.<br>Conserva lo que importa.</h2><p>Registra tus decisiones, reúne las respuestas y prepara el contexto para tu siguiente conversación.</p><button class="primary" data-action="new">Crear mi primer proyecto ${icon('arrow')}</button></div></section>`}
-      <footer class="workspace-footer"><span>PLM — poors LLM</span><span>Aplicaciones originales · Traspasos manuales · Datos locales</span></footer></div></main>`;
+    `${sidebar()}<main class="main"><header class="topbar"><div><button class="nav-toggle secondary" data-action="navigation" aria-label="Abrir navegación">☰</button><span>${p?.folder ? 'Carpeta' : 'Conversaciones'}</span><span class="breadcrumb">/</span><strong>${p?.folder ? escape(p.folder.split(/[\\/]/).filter(Boolean).pop()) : 'Sin carpeta'}</strong></div><button class="secondary" data-action="applications">${icon('external')} Aplicaciones</button></header>
+    <div class="workspace-content"><div class="page-heading"><h1>${p ? escape(p.name) : 'Tu siguiente conversación'}</h1><div class="heading-actions">${p?.folder ? `<button class="secondary" data-new-conversation="${escape(p.id)}" title="Crear otra conversación en esta carpeta">${icon('plus')} Nueva conversación</button>` : ''}${p ? `<button class="secondary handoff-toggle" data-action="toggle-handoff" aria-expanded="${handoffOpen}">${icon('copy')} Continuar en otra app</button>` : ''}</div></div>
+    ${p ? `<div class="workspace-grid ${handoffOpen ? 'with-handoff' : ''}"><section class="work-panel"><div class="panel-tabs" role="tablist" aria-label="Contenido de la conversación"><button role="tab" data-tab="conversation" aria-selected="${tab === 'conversation'}" class="${tab === 'conversation' ? 'active' : ''}">${icon('chat')} Conversación <span>${p.messages.length}</span></button><button role="tab" data-tab="context" aria-selected="${tab === 'context'}" class="${tab === 'context' ? 'active' : ''}">${icon('edit')} Contexto</button><button role="tab" data-tab="activity" aria-selected="${tab === 'activity'}" class="${tab === 'activity' ? 'active' : ''}">${icon('clock')} Actividad</button></div><div class="tab-content ${tab === 'conversation' ? 'chat-content' : ''}">${tab === 'conversation' ? conversation(p) : tab === 'context' ? context(p) : activity(p)}</div><div class="project-footer"><button data-action="reveal-folder" ${p.folder ? '' : 'disabled'} title="${escape(p.folder)}">${icon('folder')} ${p.folder ? 'Abrir carpeta' : 'Sin carpeta'}</button><button data-action="export-project">${icon('download')} Exportar conversación</button><button data-action="delete-project" class="delete-project">Eliminar conversación</button></div></section>${handoffOpen ? `<aside id="handoff-panel" class="handoff-panel" aria-label="Continuar en otra aplicación"><button class="handoff-close secondary" data-action="toggle-handoff" aria-label="Cerrar traspaso">Cerrar ×</button><div id="handoff-content">${handoffPanel(p)}</div></aside>` : ''}</div>` : `<section class="welcome-panel"><div><h2>Conserva el contexto.<br>Continúa en tu aplicación.</h2><p>Crea una conversación independiente o agrupa varias en una carpeta. Importa un plm.md para retomar trabajo anterior.</p><button class="primary" data-action="new">Crear mi primer proyecto ${icon('plus')}</button></div></section>`}</div></main>`;
+  const body = $('.conversation-body');
+  if (body) body.scrollTop = scrollPositions.get(p.id) ?? body.scrollHeight;
+  if ($('#applications-dialog').open) $('#applications-content').innerHTML = providerCards();
+}
+function openProjectDialog(parent = null) {
+  parentProject = parent?.id || null;
+  chosenFolder = parent?.folder || '';
+  $('#project-form').reset();
+  $('#project-dialog-title').textContent = parent ? 'Nueva conversación' : 'Nuevo proyecto';
+  $('#project-form [type="submit"]').textContent = parent ? 'Crear conversación' : 'Crear proyecto';
+  $('#project-form .scope-options').hidden = !!parent;
+  $('#project-folder-selection').hidden = true;
+  $('#chosen-folder').textContent = 'Sin carpeta seleccionada';
+  $('#conversation-folder-info').textContent = parent ? `En la carpeta: ${parent.folder}` : '';
+  $('#conversation-folder-info').hidden = !parent;
+  $('#project-dialog').showModal();
 }
 const options = () => ({ includeHistory, includeFolder });
 function requireSavedContext() {
@@ -204,7 +251,19 @@ document.addEventListener('click', (event) => {
       button.dataset.docs ||
       'navigation',
     async () => {
+      if (button.dataset.folder) {
+        const folder = workspace.projects.find((p) => p.id === button.dataset.folder)?.folder;
+        if (collapsedFolders.has(folder)) collapsedFolders.delete(folder);
+        else collapsedFolders.add(folder);
+        render();
+        return;
+      }
+      if (button.dataset.newConversation) {
+        openProjectDialog(workspace.projects.find((p) => p.id === button.dataset.newConversation));
+        return;
+      }
       if (button.dataset.project) {
+        navigationOpen = false;
         selected = button.dataset.project;
         target = modelById(current().preferredModel).provider;
         includeFolder = false;
@@ -253,11 +312,19 @@ document.addEventListener('click', (event) => {
       }
       switch (button.dataset.action) {
         case 'new':
-          chosenFolder = '';
-          $('#project-form').reset();
-          $('#project-folder-selection').hidden = true;
-          $('#chosen-folder').textContent = 'Sin carpeta seleccionada';
-          $('#project-dialog').showModal();
+          openProjectDialog();
+          break;
+        case 'navigation':
+          navigationOpen = !navigationOpen;
+          render();
+          break;
+        case 'toggle-handoff':
+          handoffOpen = !handoffOpen;
+          render();
+          break;
+        case 'applications':
+          $('#applications-content').innerHTML = providerCards();
+          $('#applications-dialog').showModal();
           break;
         case 'close-dialog':
           button.closest('dialog')?.close();
@@ -317,7 +384,7 @@ document.addEventListener('click', (event) => {
           if (await api.deleteProject(selected)) {
             contextDrafts.delete(selected);
             composerDrafts.delete(selected);
-            selected = null;
+            selected = workspace.projects.find((p) => p.id !== selected)?.id || null;
             await refresh();
           }
           break;
@@ -400,7 +467,14 @@ document.addEventListener('submit', (event) => {
         toast('Contexto importado. Ya puedes continuar con el modelo elegido.');
       }
       if (form.id === 'project-form') {
-        const project = await api.createProject({ ...input, folder: chosenFolder });
+        const project = await api.createProject({
+          ...input,
+          scope: parentProject ? 'folder' : input.scope,
+          folder: chosenFolder,
+          parentId: parentProject,
+        });
+        if (project.folder) collapsedFolders.delete(project.folder);
+        navigationOpen = false;
         selected = project.id;
         tab = 'conversation';
         $('#project-dialog').close();

@@ -135,7 +135,9 @@ handle('folder:choose', async () => {
 });
 handle('project:create', async (input) => {
   if (!input || typeof input !== 'object') throw new Error('Proyecto no válido.');
-  const folder = input.folder || '';
+  const parent = input.parentId ? projectFrom(store.snapshot(), input.parentId) : null;
+  if (parent && !parent.folder) throw new Error('Esta conversación no pertenece a una carpeta.');
+  const folder = parent ? parent.folder : input.folder || '';
   const scope = input.scope ?? (folder ? 'folder' : 'conversation');
   if (!['folder', 'conversation'].includes(scope))
     throw new Error('Elige carpeta o solo conversación.');
@@ -143,7 +145,8 @@ handle('project:create', async (input) => {
     throw new Error('Elige una carpeta para guardar esta conversación.');
   if (scope === 'conversation' && folder)
     throw new Error('Una conversación sin carpeta no puede tener una carpeta vinculada.');
-  if (folder && !selectedFolders.has(folder)) throw new Error('Selecciona la carpeta desde PLM.');
+  if (folder && !parent && !selectedFolders.has(folder))
+    throw new Error('Selecciona la carpeta desde PLM.');
   const project = createProject({ name: input.name, goal: input.goal ?? '', folder });
   await store.mutate((state) => {
     state.projects.push(project);

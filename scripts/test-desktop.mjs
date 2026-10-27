@@ -36,6 +36,10 @@ async function start() {
   );
   return page;
 }
+async function showHandoff(page) {
+  if (!(await page.locator('#handoff-panel').count()))
+    await page.getByRole('button', { name: 'Continuar en otra app', exact: true }).click();
+}
 try {
   let page = await start();
   await page.getByRole('button', { name: 'Crear mi primer proyecto' }).click();
@@ -74,11 +78,13 @@ try {
   await page
     .getByRole('textbox', { name: 'Próximos pasos' })
     .fill('Abrir el repositorio de pruebas en Claude y revisar hello.mjs.');
+  await showHandoff(page);
   await page.getByRole('button', { name: 'Revisar contexto' }).click();
   await page.getByRole('status').filter({ hasText: 'Guarda los cambios' }).waitFor();
   await page.getByRole('button', { name: 'Guardar contexto' }).click();
   await page.getByRole('status').filter({ hasText: 'Contexto guardado' }).waitFor();
   await page.getByRole('tab', { name: 'Conversación', exact: false }).click();
+  await showHandoff(page);
   await page.getByRole('button', { name: 'Revisar contexto' }).click();
   await page.locator('#preview-dialog').waitFor({ state: 'visible' });
   const preview = await page.locator('#preview-content').textContent();
@@ -94,6 +100,7 @@ try {
     true,
     'La interfaz debe caber en una ventana estrecha de un compositor Wayland.',
   );
+  await showHandoff(page);
   await page.getByRole('button', { name: 'Revisar contexto' }).click();
   await page.locator('#preview-dialog').waitFor({ state: 'visible' });
   await page.getByRole('button', { name: 'Cerrar', exact: true }).last().click();
@@ -105,7 +112,7 @@ try {
   await desktop.evaluate(({ dialog }, file) => {
     dialog.showSaveDialog = async () => ({ canceled: false, filePath: file });
   }, exportPath);
-  await page.getByRole('button', { name: 'Exportar proyecto', exact: false }).click();
+  await page.getByRole('button', { name: 'Exportar conversación', exact: false }).click();
   await page.getByRole('status').filter({ hasText: 'Proyecto exportado' }).waitFor();
   const exported = JSON.parse(await readFile(exportPath, 'utf8'));
   assert.equal(exported.project.folder, '');
@@ -170,12 +177,14 @@ try {
   await page.getByLabel('Modelo para empezar', { exact: true }).selectOption('flash');
   await page.getByRole('button', { name: 'Importar contexto', exact: false }).click();
   await page.getByRole('status').filter({ hasText: 'Contexto importado' }).waitFor();
+  await showHandoff(page);
   assert.equal(await page.locator('#continuation-model').inputValue(), 'flash');
   assert.ok(
     (await page.evaluate(() => window.plm.workspace())).projects[2].importedContext.includes(
       'Dato 497',
     ),
   );
+  await showHandoff(page);
   await page.getByRole('button', { name: 'Revisar contexto' }).click();
   await page.locator('#preview-dialog').waitFor({ state: 'visible' });
   assert.ok(
@@ -213,10 +222,74 @@ try {
   const solo = (await page.evaluate(() => window.plm.workspace())).projects[3];
   assert.equal(solo.folder, '');
   assert.ok(solo.goal.includes('En cada mensaje'));
+  await showHandoff(page);
   await page.getByRole('button', { name: 'Revisar contexto' }).click();
   await page.locator('#preview-dialog').waitFor({ state: 'visible' });
   assert.ok((await page.locator('#preview-content').textContent()).includes('## Contexto duro'));
   assert.ok((await page.locator('#preview-content').textContent()).includes(solo.goal));
+  await page.getByRole('button', { name: 'Cerrar', exact: true }).last().click();
+  await page.getByRole('button', { name: 'Cerrar traspaso', exact: true }).click();
+  // A saved folder can create more conversations after restart without a new file grant.
+  await page.locator('.folder-new').first().click();
+  await page.getByRole('textbox', { name: 'Nombre', exact: true }).fill('Segunda conversación');
+  await page.getByRole('button', { name: 'Crear conversación', exact: true }).click();
+  await page.getByRole('heading', { name: 'Segunda conversación', exact: true }).waitFor();
+  const grouped = (await page.evaluate(() => window.plm.workspace())).projects;
+  assert.equal(grouped[4].folder, grouped[0].folder);
+  assert.equal(grouped[4].messages.length, 0);
+  assert.equal(grouped[0].messages.length, 1);
+  assert.equal(await page.locator('.folder-group').count(), 1);
+  assert.equal(await page.locator('.folder-group [data-project]').count(), 2);
+  await page.locator('.folder-heading').click();
+  assert.equal(await page.locator('.folder-new').isVisible(), false);
+  await page.locator('.folder-heading').click();
+  assert.equal(await page.locator('.folder-new').isVisible(), true);
+  await page.getByRole('textbox', { name: 'Mensaje o nota' }).fill('Borrador que debe conservarse');
+  await page.getByRole('tab', { name: 'Contexto', exact: true }).click();
+  await page.getByRole('tab', { name: 'Conversación', exact: false }).click();
+  assert.equal(
+    await page.getByRole('textbox', { name: 'Mensaje o nota' }).inputValue(),
+    'Borrador que debe conservarse',
+  );
+  for (const size of [
+    { width: 1440, height: 950 },
+    { width: 1024, height: 700 },
+    { width: 480, height: 760 },
+    { width: 480, height: 420 },
+  ]) {
+    await page.setViewportSize(size);
+    const bounds = await page.locator('.work-panel').boundingBox();
+    const composer = await page.locator('.composer').boundingBox();
+    assert.ok(bounds.y < 200, 'El chat debe empezar cerca de la cabecera.');
+    assert.ok(
+      composer.y + composer.height < size.height,
+      'El editor debe quedar visible sin desplazar la página.',
+    );
+    assert.equal(
+      await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+      true,
+    );
+    await page.screenshot({ path: path.join(output, `layout-${size.width}.png`) });
+  }
+  await page.getByRole('button', { name: 'Abrir navegación', exact: true }).click();
+  await page.locator('.folder-group [data-project]').first().click();
+  assert.equal(await page.locator('.sidebar').isVisible(), false);
+  await page
+    .getByText('Revisar el saludo de hello.mjs y conservar la decisión anterior.', { exact: true })
+    .waitFor();
+  await desktop.close();
+  desktop = null;
+  page = await start();
+  assert.equal(await page.locator('.folder-group [data-project]').count(), 2);
+  await page.getByRole('button', { name: 'Aplicaciones', exact: true }).last().click();
+  await page.locator('#applications-dialog').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#applications-dialog .provider-card').count(), 3);
+  await page.getByRole('button', { name: 'Volver a detectar aplicaciones', exact: true }).click();
+  await page.getByRole('status').filter({ hasText: 'Aplicaciones actualizadas' }).waitFor();
+  await page
+    .locator('#applications-dialog')
+    .getByRole('button', { name: 'Cerrar', exact: true })
+    .click();
   assert.deepEqual(rendererErrors, []);
   console.log(
     'Desktop E2E: creación, contexto, portapapeles, exportación/importación, XSS, aislamiento y reinicio correctos.',

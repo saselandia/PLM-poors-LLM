@@ -1548,3 +1548,390 @@ dialog p {
     max-width: 620px;
   }
 }
+
+/* The conversation owns the viewport; secondary tools never push it down. */
+[hidden] {
+  display: none !important;
+}
+html,
+body,
+#app {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+#app {
+  height: 100dvh;
+}
+.sidebar {
+  width: 248px;
+  padding: 22px 14px 16px;
+  gap: 0;
+}
+.brand-caption {
+  margin-bottom: 22px;
+}
+.sidebar-section {
+  margin: 24px 6px 12px;
+  font-size: 9px;
+  letter-spacing: 0.6px;
+}
+.sidebar nav {
+  flex: 1;
+  min-height: 80px;
+  max-height: none;
+  overflow: auto;
+}
+.sidebar-bottom {
+  flex-shrink: 0;
+  padding-top: 12px;
+  margin-top: 14px;
+}
+.context-import-menu {
+  flex-shrink: 0;
+  max-height: 45vh;
+}
+.apps-button {
+  width: 100%;
+  margin-top: 10px;
+}
+.folder-heading {
+  width: 100%;
+  justify-content: flex-start;
+  padding: 10px 6px;
+  gap: 8px;
+  color: #d1dccc;
+  text-align: left;
+}
+.folder-heading > span:first-of-type {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.folder-heading small {
+  color: #8b9983;
+}
+.folder-children {
+  margin: 0 0 14px 10px;
+  padding-left: 8px;
+  border-left: 1px solid #33402f;
+}
+.folder-new {
+  padding: 9px 6px;
+  font-size: 11px;
+  color: #b4cc9f;
+}
+.folder-new:hover {
+  background: #20291e;
+  border-radius: 6px;
+}
+.standalone-label {
+  color: #84917d;
+  font-size: 10px;
+  margin: 15px 8px 8px;
+}
+.project-link {
+  padding: 10px 8px;
+  margin-bottom: 3px;
+}
+.main {
+  margin-left: 248px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.topbar {
+  height: 52px;
+  min-height: 52px;
+  padding: 0 22px;
+  gap: 12px;
+}
+.topbar > div {
+  min-width: 0;
+}
+.topbar strong {
+  min-width: 0;
+}
+.workspace-content {
+  width: 100%;
+  max-width: none;
+  padding: 16px 22px 20px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.page-heading {
+  margin: 0 0 16px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.page-heading h1 {
+  font-size: 22px;
+  margin: 0;
+  min-width: 0;
+  flex: 1;
+}
+.heading-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.workspace-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  flex: 1;
+  min-height: 0;
+  gap: 16px;
+  align-items: stretch;
+}
+.workspace-grid.with-handoff {
+  grid-template-columns: minmax(0, 1fr) 300px;
+}
+.work-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+.panel-tabs {
+  height: 48px;
+  min-height: 48px;
+}
+.panel-tabs button {
+  font-size: 12px;
+}
+.tab-content {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 20px;
+}
+.chat-content {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.conversation-body {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+}
+.composer {
+  flex-shrink: 0;
+}
+.composer textarea {
+  font-size: 13px;
+  min-height: 65px;
+  max-height: 160px;
+  resize: none;
+}
+.composer select {
+  font-size: 11px;
+}
+.composer-caption {
+  flex-shrink: 0;
+  margin: 8px 0 12px;
+  font-size: 10px;
+}
+.project-footer {
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+}
+.project-footer button,
+.project-footer .delete-project {
+  font-size: 10px;
+}
+.handoff-panel {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px;
+}
+.handoff-close {
+  float: right;
+  margin-bottom: 12px;
+}
+.handoff-heading {
+  clear: both;
+}
+.handoff-panel h2 {
+  font-size: 18px;
+  margin-top: 12px;
+  max-width: none;
+}
+.handoff-intro {
+  margin-bottom: 16px;
+}
+.nav-toggle,
+.nav-close {
+  display: none;
+}
+.welcome-panel {
+  margin: auto;
+  max-width: 660px;
+  display: block;
+}
+#applications-dialog {
+  width: min(800px, calc(100vw - 32px));
+}
+#applications-dialog .provider-grid {
+  margin-top: 20px;
+}
+#conversation-folder-info {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 1100px) {
+  .workspace-grid.with-handoff {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .handoff-panel {
+    position: fixed;
+    right: 16px;
+    top: 62px;
+    bottom: 16px;
+    width: min(330px, calc(100vw - 32px));
+    z-index: 5;
+    box-shadow: 0 12px 60px #000b;
+  }
+}
+@media (max-width: 700px) {
+  #app {
+    flex-direction: row;
+  }
+  .sidebar {
+    display: none;
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(300px, calc(100vw - 48px));
+    z-index: 10;
+    border-right: 1px solid #46523d;
+    box-shadow: 20px 0 60px #0009;
+  }
+  .sidebar.is-open {
+    display: flex;
+  }
+  .sidebar nav {
+    display: block;
+    margin-top: 0;
+    overflow: auto;
+  }
+  .sidebar-section,
+  .sidebar-bottom {
+    display: flex;
+  }
+  .sidebar-empty {
+    display: block;
+  }
+  .project-link {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+  }
+  .main {
+    margin-left: 0;
+  }
+  .nav-toggle,
+  .nav-close {
+    display: inline-flex;
+  }
+  .nav-close {
+    margin-left: auto;
+    font-size: 25px;
+  }
+  .sidebar .version {
+    display: none;
+  }
+  .topbar {
+    padding: 0 12px;
+  }
+  .topbar strong {
+    max-width: 140px;
+  }
+  .workspace-content {
+    padding: 12px;
+  }
+  .page-heading {
+    margin-bottom: 10px;
+    gap: 8px;
+  }
+  .page-heading h1 {
+    font-size: 19px;
+    flex-basis: 100%;
+  }
+  .heading-actions .secondary {
+    padding: 8px;
+    font-size: 10px;
+  }
+  .tab-content {
+    padding: 0 12px;
+  }
+  .panel-tabs {
+    gap: 14px;
+    padding: 0 12px;
+  }
+  .panel-tabs button {
+    font-size: 11px;
+  }
+  .composer-toolbar {
+    gap: 6px;
+  }
+  .composer-caption {
+    line-height: 1.5;
+  }
+  .project-footer {
+    flex-wrap: wrap;
+    padding: 10px;
+  }
+  .conversation-empty {
+    padding: 12px;
+  }
+  .conversation-empty h3 {
+    font-size: 16px;
+  }
+}
+@media (max-height: 600px) {
+  .topbar {
+    height: 42px;
+    min-height: 42px;
+  }
+  .workspace-content {
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+  .page-heading {
+    margin-bottom: 8px;
+  }
+  .composer textarea {
+    height: 56px;
+    min-height: 56px;
+    padding: 8px 12px;
+  }
+  .composer-caption {
+    margin: 4px 0;
+  }
+  .composer-toolbar {
+    padding: 5px 8px;
+  }
+  .conversation-empty .empty-orbit {
+    display: none;
+  }
+  .conversation-empty {
+    padding: 8px;
+  }
+  .conversation-empty h3 {
+    font-size: 13px;
+    margin: 0;
+  }
+  .conversation-empty p {
+    display: none;
+  }
+  .sidebar .brand-caption,
+  .sidebar-bottom {
+    display: none;
+  }
+  .sidebar-section {
+    margin-top: 12px;
+  }
+}

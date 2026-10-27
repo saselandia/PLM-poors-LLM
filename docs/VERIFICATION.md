@@ -34,3 +34,12 @@ La detección local encuentra los ejecutables de Codex, Claude Desktop y Antigra
 - Firma, notarización, instaladores y actualización segura.
 
 El CI verifica el núcleo en los tres sistemas. La interfaz y los lanzadores en aplicaciones reales de macOS y Windows siguen pendientes de validación nativa.
+
+## Revisión de interfaz 0.3.0
+
+- Conversación como área principal, editor visible y desplazamiento del historial independiente.
+- Carpetas desplegables con varias conversaciones; creación en carpeta ya guardada después de reiniciar.
+- Historiales independientes y conservación de borradores al cambiar de pestaña.
+- Comprobaciones de posición del chat y visibilidad del editor en 1440×950, 1024×700 y 480×760; capturas revisadas.
+- Aplicaciones en diálogo separado y traspaso en panel que se abre a petición.
+- Datos v1 existentes compatibles: agrupación por la ruta guardada, sin reescribir ni eliminar historiales.
