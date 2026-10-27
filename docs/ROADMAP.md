@@ -61,3 +61,12 @@ Configurar CI en macOS, Windows y Linux para pruebas del núcleo y empaquetado. 
 - [x] Distinguir contexto copiado, inicio solicitado y error de apertura.
 - [x] Conservar textos antiguos como archivo opcional y mantener las versiones de contexto.
 - [ ] Integraciones de conversaciones externas autorizadas; abrir una aplicación todavía no selecciona ni sincroniza sus chats.
+
+## 0.6 — Uso de suscripciones
+
+- [x] Panel de uso por proveedor con usado, restante, reinicio y fecha de lectura.
+- [x] Consulta oficial de Codex de solo lectura y refresco al abrir o cada minuto visible.
+- [x] Conexiones reversibles de statusLine para Claude Code y Antigravity CLI, sin usar sus credenciales ni generar turnos.
+- [x] Estados sin datos, lectura anterior y ventana vencida; nunca inventar porcentajes.
+- [x] Pruebas sintéticas del protocolo y recolectores; lectura real de Codex.
+- [ ] Validar las exportaciones de cuotas con las cuentas y versiones reales de Claude Code y Antigravity CLI.

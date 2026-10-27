@@ -46,6 +46,8 @@ let workspace = { projects: [] },
 let includeHistory = false,
   includeFolder = false,
   toastTimer;
+let usage = {};
+let usageLoading = false;
 let pendingContext = null;
 let pasteTargetId = null;
 let parentProject = null;
@@ -112,7 +114,7 @@ function sidebar() {
     })
     .join('');
   return `<aside class="sidebar ${navigationOpen ? 'is-open' : ''}">
-    <div class="brand"><div class="brand-symbol">p<span>l</span>m</div><button class="nav-close" data-action="navigation" aria-label="Cerrar navegación">×</button><span class="version">0.5</span></div>
+    <div class="brand"><div class="brand-symbol">p<span>l</span>m</div><button class="nav-close" data-action="navigation" aria-label="Cerrar navegación">×</button><span class="version">0.6</span></div>
     <div class="brand-caption">poors LLM</div>
     <button class="new-project" data-action="new">${icon('plus')} Nuevo proyecto <span>↗</span></button>
     <div class="sidebar-section"><span>CARPETAS Y CONVERSACIONES</span><span>${workspace.projects.length}</span></div>
@@ -148,6 +150,99 @@ function hasContext(p) {
     (includeHistory && p.messages.length)
   );
 }
+function usageWindows(info) {
+  if (!info) return '<p class="usage-empty">Consultando el uso…</p>';
+  const windows = (info.windows || [])
+    .map((w) => {
+      const expired = w.resetsAt != null && w.resetsAt * 1000 <= Date.now();
+      const valid = !expired && !w.disabled && w.usedPercent != null;
+      const used = w.disabled
+        ? 'Cuota deshabilitada'
+        : valid
+          ? `${Math.round(w.usedPercent * 10) / 10}% usado`
+          : expired
+            ? 'Pendiente de renovar lectura'
+            : 'Porcentaje no disponible';
+      const remaining = valid
+        ? `${Math.round(w.remainingPercent * 10) / 10}% restante`
+        : !expired && !w.disabled && w.remainingAmount != null
+          ? `${w.remainingAmount} restantes`
+          : '';
+      const reset =
+        w.resetsAt != null ? `Reinicio: ${formatDate(w.resetsAt * 1000)}` : 'Reinicio no informado';
+      return `<div class="usage-window"><div class="usage-window-heading"><strong>${escape(w.label)}</strong><span>${escape(used)}</span></div>${valid ? `<progress max="100" value="${w.usedPercent}" aria-label="${escape(w.label)}: ${escape(used)}"></progress>` : ''}<div class="usage-window-footer"><span>${escape(remaining)}</span><span>${escape(reset)}</span></div></div>`;
+    })
+    .join('');
+  let notice = '';
+  if (info.error) notice = info.error;
+  else if (info.status === 'waiting')
+    notice = 'Conexión activada. Esperando a que el CLI oficial publique sus datos de cuota.';
+  else if (info.status === 'disconnected')
+    notice = 'Conecta la barra de estado del CLI oficial para recibir su cuota aquí.';
+  else if (!windows)
+    notice = 'La aplicación todavía no ha publicado datos de cuota para esta sesión.';
+  const stamp = info.updatedAt
+    ? `${info.stale || info.status === 'error' ? 'Lectura anterior' : 'Última lectura'}: ${formatDate(info.updatedAt)}`
+    : '';
+  return `${windows}${notice ? `<p class="usage-empty">${escape(notice)}</p>` : ''}${stamp ? `<p class="usage-stamp">${escape(stamp)}${info.stale ? ' · puede haber cambiado' : ''}</p>` : ''}`;
+}
+function currentUsage() {
+  const info = usage[target];
+  return `<details class="current-usage"><summary>Uso de la suscripción de ${tools[target].name}${info?.available ? '' : ' · sin lectura actual'}</summary>${usageWindows(info)}<button class="review-link" data-action="usage">Ver las tres suscripciones</button></details>`;
+}
+function usagePanel() {
+  return Object.entries(tools)
+    .map(([id, tool]) => {
+      const info = usage[id];
+      return `<section class="usage-card" data-usage-provider="${id}"><h3>${tool.name}${info?.plan ? ` <small>${escape(info.plan)}</small>` : ''}</h3>${usageWindows(info)}${id !== 'codex' ? `<p class="usage-source">Fuente: barra de estado de ${id === 'claude' ? 'Claude Code' : 'Antigravity CLI'}. Se actualiza cuando lo usas; no extrae datos de los chats de escritorio.</p><button class="secondary" data-usage-${info?.connected ? 'disconnect' : 'connect'}="${id}">${info?.connected ? 'Desconectar medidor' : `Conectar ${id === 'claude' ? 'Claude Code' : 'Antigravity CLI'}`}</button>${info?.connected ? '' : '<p class="usage-connection-note">Activa un script local en la configuración del CLI. Conserva la barra de estado que ya tengas y puedes desconectarlo después.</p>'}` : '<p class="usage-source">Fuente: cliente oficial de Codex. Solo consulta los límites; no inicia chats ni usa modelos.</p>'}<button class="review-link" data-usage-help="${id}">Cómo funciona la conexión</button></section>`;
+    })
+    .join('');
+}
+function updateUsageViews() {
+  const compact = $('.current-usage');
+  if (compact) {
+    const open = compact.open;
+    compact.outerHTML = currentUsage();
+    $('.current-usage').open = open;
+  }
+  if ($('#usage-dialog').open) $('#usage-content').innerHTML = usagePanel();
+  const windows = usage[target]?.windows || [];
+  const first = windows.find(
+    (w) =>
+      !w.disabled &&
+      w.usedPercent != null &&
+      (w.resetsAt == null || w.resetsAt * 1000 > Date.now()),
+  );
+  const button = $('[data-action="usage"]');
+  if (button) {
+    const previous = usage[target]?.stale || usage[target]?.status === 'error';
+    button.textContent = first
+      ? `${tools[target].name}: ${Math.round(first.usedPercent)}%${previous ? ' · anterior' : ''}`
+      : 'Uso y límites';
+    button.title = first
+      ? `${tools[target].name} · ${first.label} · ${Math.round(first.usedPercent)}% usado${previous ? ' · lectura anterior' : ''}`
+      : 'Consultar el uso de las tres suscripciones';
+  }
+}
+async function loadUsage(force = false, ensureFresh = false) {
+  if (usageLoading) {
+    await usageLoading;
+    if (!force && !ensureFresh) return;
+  }
+  $('#refresh-usage').disabled = true;
+  usageLoading = (async () => {
+    try {
+      usage = await api.subscriptionUsage(force);
+      updateUsageViews();
+    } catch (error) {
+      toast(error.message, true);
+    } finally {
+      usageLoading = null;
+      $('#refresh-usage').disabled = false;
+    }
+  })();
+  return usageLoading;
+}
 function continuation(p) {
   const tool = tools[target];
   const installed = providers.find((item) => item.id === target)?.installed;
@@ -160,7 +255,7 @@ function continuation(p) {
     )
     .join(
       '',
-    )}</div><label class="model-picker">Modelo para elegir en ${tool.name}<select id="continuation-model">${modelOptions(p.preferredModel)}</select></label><p class="model-guidance">Mid recomendado. Esta elección no cambia el modelo dentro de la otra aplicación.</p>${installed ? `<button class="primary continue-button" data-action="continue" ${hasContext(p) ? '' : 'disabled'}>${icon('external')} Copiar contexto y abrir ${tool.name}</button>` : `<button class="primary continue-button" data-configure="${target}">${icon('folder')} Seleccionar aplicación de ${tool.name}</button>`}<p class="continue-help">${hasContext(p) ? `Después de abrir ${tool.name}, elige el chat donde continuar y pega el contexto con Ctrl+V (⌘V en Mac).` : 'Añade un resumen o guarda instrucciones del proyecto para poder continuar.'}</p><div class="continue-status" role="status">${escape(continuationStatus.get(p.id) || '')}</div><button class="review-link" data-action="preview" ${hasContext(p) ? '' : 'disabled'}>Revisar lo que se copiará</button><details class="copy-options"><summary>Opciones de copia y exportación</summary><label><input id="include-folder" type="checkbox" ${includeFolder ? 'checked' : ''} ${p.folder ? '' : 'disabled'}> Incluir ruta de carpeta (no adjunta archivos)</label>${p.messages.length ? `<label><input id="include-history" type="checkbox" ${includeHistory ? 'checked' : ''}> Incluir textos de versiones anteriores</label>` : ''}<div class="workflow-actions"><button class="secondary" data-action="copy" ${hasContext(p) ? '' : 'disabled'}>Solo copiar contexto</button><button class="secondary" data-action="export-handoff" ${hasContext(p) ? '' : 'disabled'}>Exportar Markdown</button></div></details></section>`;
+    )}</div><label class="model-picker">Modelo para elegir en ${tool.name}<select id="continuation-model">${modelOptions(p.preferredModel)}</select></label><p class="model-guidance">Mid recomendado. Esta elección no cambia el modelo dentro de la otra aplicación.</p>${installed ? `<button class="primary continue-button" data-action="continue" ${hasContext(p) ? '' : 'disabled'}>${icon('external')} Copiar contexto y abrir ${tool.name}</button>` : `<button class="primary continue-button" data-configure="${target}">${icon('folder')} Seleccionar aplicación de ${tool.name}</button>`}<p class="continue-help">${hasContext(p) ? `Después de abrir ${tool.name}, elige el chat donde continuar y pega el contexto con Ctrl+V (⌘V en Mac).` : 'Añade un resumen o guarda instrucciones del proyecto para poder continuar.'}</p><div class="continue-status" role="status">${escape(continuationStatus.get(p.id) || '')}</div><button class="review-link" data-action="preview" ${hasContext(p) ? '' : 'disabled'}>Revisar lo que se copiará</button>${currentUsage()}<details class="copy-options"><summary>Opciones de copia y exportación</summary><label><input id="include-folder" type="checkbox" ${includeFolder ? 'checked' : ''} ${p.folder ? '' : 'disabled'}> Incluir ruta de carpeta (no adjunta archivos)</label>${p.messages.length ? `<label><input id="include-history" type="checkbox" ${includeHistory ? 'checked' : ''}> Incluir textos de versiones anteriores</label>` : ''}<div class="workflow-actions"><button class="secondary" data-action="copy" ${hasContext(p) ? '' : 'disabled'}>Solo copiar contexto</button><button class="secondary" data-action="export-handoff" ${hasContext(p) ? '' : 'disabled'}>Exportar Markdown</button></div></details></section>`;
 }
 function context(p) {
   const draft = contextDrafts.get(p.id) || p;
@@ -201,9 +296,10 @@ function render() {
   const openedNotes =
     $('.work-panel')?.dataset.projectId === p?.id && $('#context-form')?.closest('details')?.open;
   $('#app').innerHTML =
-    `${sidebar()}<main class="main"><header class="topbar"><div><button class="nav-toggle secondary" data-action="navigation" aria-label="Abrir navegación">☰</button><span>${p?.folder ? 'Carpeta' : 'Proyectos'}</span><span class="breadcrumb">/</span><strong>${p?.folder ? escape(p.folder.split(/[\\/]/).filter(Boolean).pop()) : 'Sin carpeta'}</strong></div><button class="secondary" data-action="applications">${icon('external')} Aplicaciones</button></header><div class="workspace-content"><div class="page-heading"><h1>${p ? escape(p.name) : 'Tu proyecto, en las tres aplicaciones'}</h1>${p?.folder ? `<button class="secondary" data-new-conversation="${escape(p.id)}">${icon('plus')} Nueva conversación</button>` : ''}</div><p class="product-purpose">PLM guarda el resumen de tu proyecto para continuar entre Codex, Claude y Antigravity. Trabajas y recibes respuestas en sus aplicaciones originales.</p>${p ? `<section class="work-panel" data-project-id="${escape(p.id)}"><div class="workspace-body">${context(p)}</div><div class="project-footer"><button data-action="reveal-folder" ${p.folder ? '' : 'disabled'}>${icon('folder')} ${p.folder ? 'Abrir carpeta' : 'Sin carpeta'}</button><button data-action="export-project">${icon('download')} Exportar proyecto</button><button data-action="delete-project" class="delete-project">Eliminar de PLM</button></div></section>` : `<section class="welcome-panel"><h2>Trae el resumen y elige dónde seguir.</h2><p>Añade un plm.md o pega su contenido. PLM lo prepara para que lo lleves a la siguiente aplicación.</p><div class="workflow-actions"><button class="primary" data-action="choose-context">Añadir plm.md</button><button class="secondary" data-action="paste-context">Pegar resumen</button><button class="secondary" data-action="new">Nuevo proyecto</button></div><button class="review-link" data-action="copy-context-request">Copiar petición para obtener el resumen</button></section>`}</div></main>`;
+    `${sidebar()}<main class="main"><header class="topbar"><div><button class="nav-toggle secondary" data-action="navigation" aria-label="Abrir navegación">☰</button><span>${p?.folder ? 'Carpeta' : 'Proyectos'}</span><span class="breadcrumb">/</span><strong>${p?.folder ? escape(p.folder.split(/[\\/]/).filter(Boolean).pop()) : 'Sin carpeta'}</strong></div><div class="header-actions"><button class="secondary" data-action="usage" aria-label="Uso de suscripciones">Uso y límites</button><button class="secondary" data-action="applications">${icon('external')} Aplicaciones</button></div></header><div class="workspace-content"><div class="page-heading"><h1>${p ? escape(p.name) : 'Tu proyecto, en las tres aplicaciones'}</h1>${p?.folder ? `<button class="secondary" data-new-conversation="${escape(p.id)}">${icon('plus')} Nueva conversación</button>` : ''}</div><p class="product-purpose">PLM guarda el resumen de tu proyecto para continuar entre Codex, Claude y Antigravity. Trabajas y recibes respuestas en sus aplicaciones originales.</p>${p ? `<section class="work-panel" data-project-id="${escape(p.id)}"><div class="workspace-body">${context(p)}</div><div class="project-footer"><button data-action="reveal-folder" ${p.folder ? '' : 'disabled'}>${icon('folder')} ${p.folder ? 'Abrir carpeta' : 'Sin carpeta'}</button><button data-action="export-project">${icon('download')} Exportar proyecto</button><button data-action="delete-project" class="delete-project">Eliminar de PLM</button></div></section>` : `<section class="welcome-panel"><h2>Trae el resumen y elige dónde seguir.</h2><p>Añade un plm.md o pega su contenido. PLM lo prepara para que lo lleves a la siguiente aplicación.</p><div class="workflow-actions"><button class="primary" data-action="choose-context">Añadir plm.md</button><button class="secondary" data-action="paste-context">Pegar resumen</button><button class="secondary" data-action="new">Nuevo proyecto</button></div><button class="review-link" data-action="copy-context-request">Copiar petición para obtener el resumen</button></section>`}</div></main>`;
   if (openedNotes && $('.project-notes')) $('.project-notes').open = true;
   if ($('#applications-dialog').open) $('#applications-content').innerHTML = providerCards();
+  updateUsageViews();
 }
 function showContextImport(file) {
   pendingContext = file;
@@ -275,6 +371,32 @@ document.addEventListener('click', (event) => {
       button.dataset.docs ||
       'navigation',
     async () => {
+      if (button.dataset.usageConnect) {
+        button.disabled = true;
+        try {
+          await api.connectUsage(button.dataset.usageConnect);
+          await loadUsage(false, true);
+        } finally {
+          button.disabled = false;
+        }
+        toast('Conexión activada. Los datos llegarán desde tu próxima sesión del CLI oficial.');
+        return;
+      }
+      if (button.dataset.usageDisconnect) {
+        button.disabled = true;
+        try {
+          await api.disconnectUsage(button.dataset.usageDisconnect);
+          await loadUsage(false, true);
+        } finally {
+          button.disabled = false;
+        }
+        toast('Medidor desconectado. Se ha restaurado tu barra de estado anterior.');
+        return;
+      }
+      if (button.dataset.usageHelp) {
+        await api.usageHelp(button.dataset.usageHelp);
+        return;
+      }
       if (button.dataset.folder) {
         const folder = workspace.projects.find((p) => p.id === button.dataset.folder)?.folder;
         if (collapsedFolders.has(folder)) collapsedFolders.delete(folder);
@@ -341,6 +463,14 @@ document.addEventListener('click', (event) => {
         case 'navigation':
           navigationOpen = !navigationOpen;
           render();
+          break;
+        case 'usage':
+          $('#usage-content').innerHTML = usagePanel();
+          $('#usage-dialog').showModal();
+          void loadUsage();
+          break;
+        case 'refresh-usage':
+          await loadUsage(true);
           break;
         case 'applications':
           $('#applications-content').innerHTML = providerCards();
@@ -609,6 +739,10 @@ if (!api) {
     target = modelById(current()?.preferredModel ?? DEFAULT_MODEL).provider;
     render();
     await api.ready();
+    void loadUsage();
+    setInterval(() => {
+      if (document.visibilityState === 'visible') void loadUsage();
+    }, 60_000);
   } catch (error) {
     $('#app').textContent = `No se ha podido abrir PLM: ${error.message}`;
   }

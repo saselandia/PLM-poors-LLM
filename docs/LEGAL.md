@@ -63,3 +63,13 @@ No se ha contactado con proveedores ni se han aceptado acuerdos en nombre del us
 Se han vuelto a consultar las fuentes oficiales de OpenAI SIWC, Claude Code y Antigravity indicadas arriba el 27 de octubre de 2026. OpenAI distingue la autorización para usar el plan del acceso a conversaciones: SIWC no concede acceso al historial. Claude Code limita la autenticación de productos de terceros y distingue su binario oficial de un cliente propio. Antigravity mantiene las restricciones al uso de herramientas de terceros con su login de consumo.
 
 La versión 0.4.0 mejora el tratamiento de documentos locales: pegar Markdown elegido por el usuario, actualizar un resumen y recuperar versiones. No implementa autenticación, inferencia ni sincronización con servicios externos. Los botones de apertura siguen lanzando la aplicación original sin prompts. No se presupone autorización contractual para integrar las tres suscripciones ni se presenta el diseño como una garantía jurídica. Las integraciones oficiales continúan como trabajos separados por proveedor.
+
+## Cuotas documentadas en 0.6.0
+
+Se han consultado el 27 de octubre de 2026 las páginas oficiales de [Codex app-server](https://learn.chatgpt.com/docs/app-server), [Claude Code statusLine](https://code.claude.com/docs/en/statusline) y [Antigravity statusLine](https://www.antigravity.google/docs/cli/statusline).
+
+La documentación de Codex contempla consultar límites por su interfaz de cuentas y distingue el uso local del comercial o alojado. Esta función se limita a inicializar el cliente identificado como PLM y leer límites con el cliente oficial local instalado; no implementa inferencia ni autenticación propia. No se amplía esta interpretación a un servicio comercial o remoto.
+
+Claude Code y Antigravity describen extensiones de barra de estado que reciben cuotas. PLM ofrece instalar un recolector local en ese punto documentado, activado por el usuario, manteniendo el comando previo. Son exportaciones del CLI durante el uso normal; no clientes que reutilicen credenciales ni consultas de PLM a servicios de esos proveedores. No se utiliza headless de Antigravity. Esto no autoriza otras formas de intermediar suscripciones o sincronizar chats.
+
+Esta revisión de diseño no equivale a aprobación jurídica de los proveedores. Las restricciones y las integraciones de modelos siguen requiriendo evaluación por separado.

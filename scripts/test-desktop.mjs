@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import { _electron as electron } from 'playwright';
 import electronPath from 'electron';
 import assert from 'node:assert/strict';
@@ -10,7 +11,12 @@ const output = path.resolve('test-results');
 await mkdir(output, { recursive: true });
 const marker = path.join(directory, 'fixture-launched');
 const fixture = path.join(directory, 'official-ui-fixture');
-const env = { ...process.env, PLM_DATA_DIR: directory, PLM_LAUNCH_MARKER: marker };
+const env = {
+  ...process.env,
+  PLM_DATA_DIR: directory,
+  PLM_LAUNCH_MARKER: marker,
+  PLM_DISABLE_USAGE_AUTO: '1',
+};
 delete env.ELECTRON_RUN_AS_NODE;
 let desktop;
 let page;
@@ -287,6 +293,55 @@ try {
   assert.equal(state.projects[2].messages[0].content, malicious);
   assert.equal(await page.locator('.folder-group [data-project]').count(), 2);
   assert.equal(await page.locator('#message-form').count(), 0);
+
+  // Official statusLine exports feed quotas without starting models or touching personal configuration.
+  await page.getByRole('button', { name: 'Uso de suscripciones', exact: true }).click();
+  await page.getByRole('button', { name: 'Actualizar uso', exact: true }).click();
+  const usageDialog = page.locator('#usage-dialog');
+  const claudeUsage = usageDialog.locator('[data-usage-provider="claude"]');
+  assert.equal(
+    await claudeUsage.locator('progress').count(),
+    0,
+    'Sin datos no debe inventar 0% de uso.',
+  );
+  await page.getByRole('button', { name: 'Conectar Claude Code', exact: true }).click();
+  await page.getByRole('status').filter({ hasText: 'Conexión activada' }).waitFor();
+  assert.ok((await claudeUsage.textContent()).includes('Esperando'));
+  if (process.platform !== 'win32') {
+    const connectionScript = path.join(directory, 'usage', 'claude-statusline.sh');
+    const collected = spawnSync('/bin/sh', [connectionScript], {
+      input: JSON.stringify({
+        email: 'private@example.com',
+        transcript_path: '/private/chat',
+        access_token: 'never-save-this',
+        context_window: { used_percentage: 99 },
+        rate_limits: {
+          five_hour: { used_percentage: 52, resets_at: Math.floor(Date.now() / 1000) + 3600 },
+          seven_day: { used_percentage: 20, resets_at: Math.floor(Date.now() / 1000) + 604800 },
+        },
+      }),
+      encoding: 'utf8',
+    });
+    assert.equal(collected.status, 0, collected.stderr);
+    const quotaFile = await readFile(path.join(directory, 'usage', 'claude-usage.json'), 'utf8');
+    assert.ok(!quotaFile.includes('private') && !quotaFile.includes('never-save-this'));
+    await page.getByRole('button', { name: 'Actualizar uso', exact: true }).click();
+    await claudeUsage.getByText('52% usado', { exact: true }).waitFor();
+    assert.ok((await claudeUsage.textContent()).includes('48% restante'));
+    assert.equal(await claudeUsage.locator('progress').first().getAttribute('value'), '52');
+    await page.screenshot({ path: path.join(output, 'subscription-usage.png') });
+  }
+  await claudeUsage.getByRole('button', { name: 'Desconectar medidor', exact: true }).click();
+  await page.getByRole('status').filter({ hasText: 'Medidor desconectado' }).waitFor();
+  const restoredSettings = JSON.parse(
+    await readFile(
+      path.join(directory, 'integration-test-home', '.claude', 'settings.json'),
+      'utf8',
+    ),
+  );
+  assert.equal(restoredSettings.statusLine, undefined);
+  await page.keyboard.press('Escape');
+  await usageDialog.waitFor({ state: 'hidden' });
 
   // Conflicting edits and invalid files do not overwrite the existing context.
   await paste('# Conflicto');

@@ -1,5 +1,13 @@
 import { app, BrowserWindow, Menu, ipcMain, dialog, clipboard, shell, session } from 'electron';
 import path from 'node:path';
+import os from 'node:os';
+import { findCodexCli, readCodexUsage, readUsageFile, usageState } from './core/usage.mjs';
+import {
+  connectionPaths,
+  connectionState,
+  installUsageConnection,
+  uninstallUsageConnection,
+} from './core/usage-connection.mjs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readFile, stat, open, mkdir, writeFile } from 'node:fs/promises';
 import { copyAndOpen } from './core/continue.mjs';
@@ -120,6 +128,98 @@ function filename(name) {
   return name.replace(/[^\p{L}\p{N}_-]+/gu, '-').slice(0, 80) || 'proyecto';
 }
 
+const usageDirectory = path.join(app.getPath('userData'), 'usage');
+const usageConnectionOptions = {
+  home: process.env.PLM_DATA_DIR
+    ? path.join(app.getPath('userData'), 'integration-test-home')
+    : os.homedir(),
+  directory: usageDirectory,
+  executable: process.execPath,
+  collector: path.join(root, 'core', 'usage-collector.mjs'),
+};
+let codexUsageCache = null;
+let codexUsagePending = null;
+let codexUsageAttempt = 0;
+async function codexSubscriptionUsage(force) {
+  if (codexUsagePending) return codexUsagePending;
+  if (!force && codexUsageCache && Date.now() - codexUsageAttempt < 60_000)
+    return { ...codexUsageCache, ...usageState(codexUsageCache) };
+  codexUsageAttempt = Date.now();
+  codexUsagePending = (async () => {
+    try {
+      if (process.env.PLM_DISABLE_USAGE_AUTO === '1')
+        throw new Error('Consulta de uso desactivada en este perfil de prueba.');
+      const cli = await findCodexCli();
+      if (!cli)
+        throw new Error(
+          'Instala el cliente oficial de Codex y abre su sesión para consultar el uso.',
+        );
+      const snapshot = await readCodexUsage(cli);
+      codexUsageCache = { ...snapshot, status: 'ok', error: null };
+    } catch (error) {
+      codexUsageCache = {
+        ...(codexUsageCache || { provider: 'codex', windows: [], updatedAt: null }),
+        status: 'error',
+        error: error.message,
+      };
+    }
+    return { ...codexUsageCache, ...usageState(codexUsageCache) };
+  })().finally(() => {
+    codexUsagePending = null;
+  });
+  return codexUsagePending;
+}
+async function statusSubscriptionUsage(provider) {
+  const connection = await connectionState(provider, usageConnectionOptions);
+  try {
+    const snapshot = await readUsageFile(
+      connectionPaths(provider, usageConnectionOptions).data,
+      provider,
+    );
+    return {
+      ...(snapshot || { provider, windows: [], updatedAt: null }),
+      ...usageState(snapshot),
+      connected: connection.installed,
+      stale: !connection.installed || usageState(snapshot).stale,
+      status: !connection.installed ? 'disconnected' : snapshot ? 'ok' : 'waiting',
+    };
+  } catch (error) {
+    return {
+      provider,
+      windows: [],
+      updatedAt: null,
+      available: false,
+      stale: true,
+      connected: connection.installed,
+      status: 'error',
+      error: error.message,
+    };
+  }
+}
+handle('usage:read', async (force = false) => {
+  if (typeof force !== 'boolean') throw new Error('Consulta de uso no válida.');
+  const [codex, claude, antigravity] = await Promise.all([
+    codexSubscriptionUsage(force),
+    statusSubscriptionUsage('claude'),
+    statusSubscriptionUsage('antigravity'),
+  ]);
+  return { codex, claude, antigravity };
+});
+handle('usage:connect', async (provider) =>
+  installUsageConnection(provider, usageConnectionOptions),
+);
+handle('usage:disconnect', async (provider) =>
+  uninstallUsageConnection(provider, usageConnectionOptions),
+);
+handle('usage:help', async (provider) => {
+  providerId(provider);
+  const urls = {
+    codex: 'https://learn.chatgpt.com/docs/app-server',
+    claude: 'https://code.claude.com/docs/en/statusline',
+    antigravity: 'https://www.antigravity.google/docs/cli/statusline',
+  };
+  await shell.openExternal(urls[provider]);
+});
 handle('workspace:read', () => {
   const { launchers, ...workspace } = store.snapshot();
   return workspace;

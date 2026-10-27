@@ -116,6 +116,20 @@
         </div>
       </form>
     </dialog>
+    <dialog id="usage-dialog" class="preview-dialog" aria-labelledby="usage-title">
+      <div class="dialog-heading">
+        <h2 id="usage-title">Uso de tus suscripciones</h2>
+        <button data-action="close-dialog" aria-label="Cerrar">×</button>
+      </div>
+      <p>
+        Cuota de la cuenta conectada en cada CLI. Comprueba que sea la misma que usas en su
+        aplicación de escritorio. Los datos no disponibles no se cuentan como cero.
+      </p>
+      <button id="refresh-usage" class="secondary" data-action="refresh-usage">
+        Actualizar uso
+      </button>
+      <div id="usage-content"></div>
+    </dialog>
     <div id="toast" role="status" aria-live="polite"></div>
     <dialog id="context-dialog" class="preview-dialog" aria-labelledby="context-import-title">
       <form id="context-import-form">

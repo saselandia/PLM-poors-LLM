@@ -7,6 +7,10 @@ contextBridge.exposeInMainWorld(
   'plm',
   Object.freeze({
     ready: invoke('window:ready'),
+    subscriptionUsage: invoke('usage:read'),
+    connectUsage: invoke('usage:connect'),
+    disconnectUsage: invoke('usage:disconnect'),
+    usageHelp: invoke('usage:help'),
     workspace: invoke('workspace:read'),
     createProject: invoke('project:create'),
     updateProject: invoke('project:update'),

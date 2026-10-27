@@ -65,3 +65,13 @@ El CI verifica el núcleo en los tres sistemas. La interfaz y los lanzadores en 
 - El IPC real de copia y apertura se prueba en Linux con un ejecutable inocuo que registra cuántos argumentos recibió (cero). No se abre una IA ni se consume una suscripción para esa prueba.
 - Restauración/importación de textos heredados como archivo escapado, sin ejecutarlos e ignorados por defecto en los traspasos; inclusión solo mediante casilla explícita.
 - Persistencia, carpetas, copias JSON, revisión/cancelación, rechazo de 501 líneas, versiones, conflictos de edición y cierre con Esc siguen verificados.
+
+## Uso de suscripciones 0.6.0
+
+- Consulta real de solo lectura a Codex: devuelve plan, ventanas de cinco horas y semanal; ningún thread/start, turn/start, login o consumo de reinicios.
+- Pruebas de normalización: nulo frente a cero, restante, cuotas por proveedor, unidades sin denominador, ventanas vencidas y lecturas antiguas.
+- Pruebas de protocolo: únicamente tres mensajes permitidos; errores, respuesta sobredimensionada, timeout y cierre del proceso.
+- Conexiones: conservación de preferencias y barra de estado, instalación repetida, restauración, rechazo de sobrescribir cambios del usuario y citas de rutas en Linux/Windows.
+- Recolector: JSON sintético con campos privados; archivo persistido contiene solo cuotas, no correo, credenciales o transcripción.
+- Escritorio: activar la conexión de Claude en home temporal, ejecutar el recolector con Electron, mostrar 52 % usado y 48 % restante de prueba, actualizar, desconectar y cerrar con Esc. No se han usado modelos de Claude o Antigravity ni se han modificado configuraciones personales durante estas pruebas.
+- Lecturas reales de Claude y Antigravity aún no verificadas con cuentas autenticadas; el mecanismo depende de que el CLI oficial publique su statusLine compatible. Las pruebas nativas de macOS/Windows siguen pendientes.
