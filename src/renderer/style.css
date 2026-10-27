@@ -1991,3 +1991,192 @@ body,
   min-height: 180px;
   font-family: ui-monospace, monospace;
 }
+.product-purpose {
+  color: #a7b89c;
+  line-height: 1.7;
+  margin: 0 0 16px;
+  max-width: 900px;
+}
+.workspace-content > .work-panel {
+  flex: 1;
+  min-height: 0;
+}
+.workspace-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 22px;
+}
+.journey-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(310px, 1fr);
+  gap: 26px;
+  align-items: start;
+  margin-bottom: 22px;
+}
+.context-workflow {
+  padding: 0;
+  border: 0;
+}
+.context-workflow h2,
+.continue-card h2 {
+  font-size: 20px;
+  font-weight: 500;
+  margin: 12px 0;
+  line-height: 1.4;
+}
+.context-workflow p,
+.continue-help {
+  line-height: 1.7;
+  color: #a7b89c;
+}
+.step-number {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  color: #c6e5ac;
+  border: 1px solid #627953;
+  background: #283720;
+}
+.continue-card {
+  padding: 20px;
+  border-radius: 9px;
+  border: 1px solid #4b6140;
+  background: #1b2418;
+}
+.continue-card .target-tools {
+  margin: 16px 0;
+}
+.continue-card .target-tools button {
+  padding: 10px 8px;
+  font-size: 12px;
+}
+.continue-card .model-picker {
+  font-size: 12px;
+}
+.continue-button {
+  width: 100%;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.6;
+  font-size: 14px;
+  padding: 14px 12px;
+}
+.continue-help {
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+.continue-status {
+  color: #d0e6bf;
+  line-height: 1.8;
+  font-size: 12px;
+}
+.continue-status:empty {
+  display: none;
+}
+.review-link {
+  font-size: 12px;
+  color: #c4d9b4;
+  padding: 8px 0;
+  justify-content: flex-start;
+  text-align: left;
+}
+.review-link:hover {
+  text-decoration: underline;
+}
+.summary-state {
+  color: #c6e5ac;
+  font-size: 12px;
+  margin-top: 16px;
+}
+.project-notes,
+.legacy-archive,
+.transfer-history {
+  border-top: 1px solid #34402f;
+  padding: 18px 0;
+}
+.project-notes > summary,
+.legacy-archive > summary,
+.transfer-history > summary,
+.copy-options > summary {
+  color: #b8c8aa;
+  cursor: pointer;
+  line-height: 1.7;
+  font-size: 12px;
+}
+.legacy-archive p {
+  color: #9ead93;
+  line-height: 1.7;
+}
+.archived-text {
+  margin-top: 15px;
+  border: 1px solid #34402f;
+  border-radius: 6px;
+  padding: 15px;
+}
+.archived-text pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.8;
+}
+.copy-options {
+  margin-top: 10px;
+}
+.copy-options label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 11px;
+  color: #b8c8aa;
+  padding: 10px 0;
+  line-height: 1.6;
+}
+.copy-options .workflow-actions button {
+  font-size: 10px;
+}
+.welcome-panel {
+  width: min(700px, 100%);
+}
+@media (max-width: 1100px) {
+  .journey-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 22px;
+  }
+  .journey-grid.ready .continue-card {
+    order: -1;
+  }
+}
+@media (max-width: 700px) {
+  .workspace-body {
+    padding: 16px;
+  }
+  .product-purpose {
+    font-size: 11px;
+    margin-bottom: 12px;
+  }
+  .continue-card {
+    padding: 16px;
+  }
+  .continue-card h2,
+  .context-workflow h2 {
+    font-size: 18px;
+  }
+  .continue-card .target-tools button {
+    font-size: 11px;
+    padding: 9px 5px;
+  }
+  .continue-button {
+    font-size: 13px;
+  }
+  .project-footer {
+    flex-shrink: 0;
+  }
+}
+@media (max-width: 1100px) {
+  .journey-grid.ready .step-number {
+    display: none;
+  }
+}

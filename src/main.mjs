@@ -2,13 +2,13 @@ import { app, BrowserWindow, Menu, ipcMain, dialog, clipboard, shell, session } 
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readFile, stat, open, mkdir, writeFile } from 'node:fs/promises';
+import { copyAndOpen } from './core/continue.mjs';
 import { Store } from './core/store.mjs';
 import {
   PROVIDERS,
   providerId,
   text,
   createProject,
-  addMessage,
   buildHandoff,
   exportProject,
   importProject,
@@ -171,16 +171,6 @@ handle('project:update', async (id, input) => {
 handle('context:restore', async (id, revisionId) => {
   await update(id, (p) => restoreContext(p, revisionId));
 });
-handle('message:add', async (id, input) => {
-  await update(id, (p) => addMessage(p, input));
-});
-handle('message:delete', async (id, messageId) => {
-  await update(id, (p) => ({
-    ...p,
-    messages: p.messages.filter((m) => m.id !== messageId),
-    updatedAt: new Date().toISOString(),
-  }));
-});
 handle('project:delete', async (id) => {
   const p = projectFrom(store.snapshot(), id);
   const answer = await dialog.showMessageBox(window, {
@@ -240,6 +230,17 @@ handle('provider:docs', async (id) => {
 handle('handoff:preview', (id, target, options) =>
   buildHandoff(projectFrom(store.snapshot(), id), target, handoffOptions(options)),
 );
+handle('handoff:open', async (id, target, options) => {
+  const contents = buildHandoff(projectFrom(store.snapshot(), id), target, handoffOptions(options));
+  const provider = (await detectLaunchers(store.snapshot().launchers)).find((p) => p.id === target);
+  if (!provider.installed) throw new Error(`Selecciona primero la ubicación de ${provider.name}.`);
+  return copyAndOpen({
+    content: contents,
+    copy: (value) => clipboard.writeText(value),
+    record: () => update(id, (p) => recordHandoff(p, target, 'copied')),
+    launch: () => launchOfficial(provider.executable),
+  });
+});
 handle('handoff:copy', async (id, target, options) => {
   const contents = buildHandoff(projectFrom(store.snapshot(), id), target, handoffOptions(options));
   clipboard.writeText(contents);

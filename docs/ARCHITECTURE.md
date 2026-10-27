@@ -61,3 +61,11 @@ Incrustar ventanas externas es una investigación independiente. No se utiliza u
 Al confirmar, una nueva conversación conserva el flujo original. Para un destino existente se usa una mutación serializada y se comprueba que el contexto no haya cambiado. `reviseContext` conserva el ID, carpeta, mensajes e instrucciones; sustituye el resumen y el modelo elegido. Las ediciones del formulario y restauraciones usan la misma función de revisiones. El campo opcional `contextRevisions` contiene hasta diez instantáneas de los cuatro campos de contexto. Se valida al leer y al guardar, sin ejecutar Markdown ni incorporar las revisiones a los traspasos. Las copias JSON las conservan. Los límites por campo y los 8 MB globales siguen aplicándose; un guardado rechazado deja el estado anterior intacto.
 
 El renderer abre Contexto como vista inicial. La entrada manual es una pestaña secundaria. Las importaciones y restauraciones exigen guardar antes cualquier borrador del formulario; el borrador manual se mantiene independiente.
+
+## Flujo de apertura y retirada del registro (0.5)
+
+La interfaz tiene una sola pantalla con resumen, selección de destino y acción de continuación. Se retiran las pestañas y el editor manual; también se retiran `message:add` y `message:delete` del IPC y preload. Los mensajes existentes siguen en el esquema para importar/exportar y revisar archivos anteriores; su inclusión es opcional y está desmarcada al cambiar de proyecto.
+
+`handoff:open` valida el proyecto, destino, opciones y lanzador disponible. `copyAndOpen` copia el texto, intenta registrar la copia y solicita abrir la aplicación con el lanzador existente sin argumentos de prompt. Devuelve por separado `copied`, `started`, `error` y `recordError`. Un fallo al copiar impide abrir; un fallo de apertura conserva la copia e informa del problema. Un fallo de persistencia del registro no oculta el resultado del portapapeles o del proceso. `started` solo acredita la creación del proceso, nunca que exista un chat ni se haya enviado texto.
+
+Las instrucciones del proyecto, revisiones, textos archivados e historial de traspasos son desplegables secundarios. El resumen y la acción principal están visibles, con la acción priorizada en ventanas estrechas cuando ya hay contexto.

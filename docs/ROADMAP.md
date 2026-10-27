@@ -52,3 +52,12 @@ Configurar CI en macOS, Windows y Linux para pruebas del núcleo y empaquetado. 
 - [x] Rechazo de importaciones si el contexto cambió durante la revisión; cancelación sin escrituras.
 - [x] Revisión de condiciones oficiales por proveedor; ninguna reutilización de credenciales o inferencia en esta versión.
 - [ ] Sincronización real de chats mediante integraciones autorizadas y documentadas; no está incluida en este flujo de documentos.
+
+## 0.5 — Propósito y acción directa
+
+- [x] Retirar el registro manual y las pestañas de la pantalla principal.
+- [x] Mostrar el propósito, resumen, selección de aplicación y botón Copiar contexto y abrir… en el mismo flujo.
+- [x] Permitir seleccionar la ubicación del programa cuando no está detectado.
+- [x] Distinguir contexto copiado, inicio solicitado y error de apertura.
+- [x] Conservar textos antiguos como archivo opcional y mantener las versiones de contexto.
+- [ ] Integraciones de conversaciones externas autorizadas; abrir una aplicación todavía no selecciona ni sincroniza sus chats.

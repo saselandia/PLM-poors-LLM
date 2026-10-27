@@ -57,3 +57,11 @@ El CI verifica el núcleo en los tres sistemas. La interfaz y los lanzadores en 
 - Conflicto de edición durante una revisión: importación rechazada y contenido previo conservado.
 - Traspaso tras restauración: solo incluye la versión vigente del resumen.
 - Capturas revisadas del espacio de contexto a 1440 y 480 píxeles; datos sintéticos y ningún acceso a sesiones externas.
+
+## Continuación directa 0.5.0
+
+- Núcleo: copia/apertura ordenadas, ningún prompt pasado al lanzador, fallos de portapapeles, registro y apertura diferenciados.
+- Escritorio: sin pestañas ni editor de mensajes; propósito visible y botón principal dentro de ventanas de 1440×950, 1024×700 y 480×760.
+- El IPC real de copia y apertura se prueba en Linux con un ejecutable inocuo que registra cuántos argumentos recibió (cero). No se abre una IA ni se consume una suscripción para esa prueba.
+- Restauración/importación de textos heredados como archivo escapado, sin ejecutarlos e ignorados por defecto en los traspasos; inclusión solo mediante casilla explícita.
+- Persistencia, carpetas, copias JSON, revisión/cancelación, rechazo de 501 líneas, versiones, conflictos de edición y cierre con Esc siguen verificados.
