@@ -1,0 +1,47 @@
+# Arquitectura de PLM
+
+Decisión inicial: Electron, interfaz local HTML/CSS/JavaScript, sin framework de UI y sin dependencias de producción. Se prioriza comprobar la continuidad del trabajo antes de incorporar un motor de agentes.
+
+## Separación de responsabilidades
+
+```text
+Interfaz local en sandbox
+        │ API limitada mediante contextBridge
+        ▼
+Proceso principal de Electron
+        ├── Proyectos e historial → Store → workspace.json
+        ├── Contexto → vista previa / portapapeles / archivo elegido
+        └── Launcher → ejecutable original sin shell ni prompts
+```
+
+El renderer no tiene Node, acceso directo al disco ni red. El preload expone funciones concretas; no expone `ipcRenderer` ni un ejecutor genérico. El proceso principal valida los remitentes IPC, los proveedores, los textos, los tamaños y los esquemas. Se bloquean navegación, ventanas adicionales, webviews y permisos web.
+
+## Modelo de datos v1
+
+Un proyecto tiene ID propio, nombre, carpeta local opcional, objetivo, decisiones, próximos pasos, mensajes y registros de traspaso. Cada mensaje tiene rol, proveedor de origen y fecha. La atribución la introduce el usuario: no certifica que el proveedor generase ese texto. La versión inicial tiene una conversación por proyecto.
+
+Los proyectos de PLM y las sesiones de los proveedores son entidades distintas. La interfaz usa un historial común mantenido por el usuario. No se escriben IDs, sesiones o bases internas de otras aplicaciones.
+
+Las exportaciones JSON usan `format: plm-project` y `version: 1`. La importación valida el esquema, genera un ID nuevo, descarta propiedades desconocidas y elimina la carpeta local. Las rutas de aplicaciones no forman parte del archivo portable. El Markdown puede excluir el historial y omite la carpeta salvo selección explícita.
+
+El contexto incluye advertencias de procedencia y conserva el texto histórico sin interpretarlo. Esto no constituye una defensa completa contra instrucciones maliciosas en el contenido. Siempre hay revisión manual antes del uso en otra aplicación.
+
+## Persistencia
+
+Una cola serializa las mutaciones para no perder escrituras concurrentes. Cada cambio se valida y se escribe en un temporal exclusivo; se sincroniza el archivo antes de renombrarlo sobre el destino. El estado en memoria solo cambia después del guardado. El protocolo evita archivos parcialmente escritos; no es un sistema de copias de seguridad ni garantiza recuperación ante todos los fallos de hardware. Un archivo corrupto provoca parada conservando el original.
+
+Límites iniciales: 100 proyectos, 2.000 mensajes y 2.000 traspasos por proyecto, 100.000 caracteres por mensaje y 8 MB por espacio o importación. La interfaz informa del rechazo; la exportación permite archivar proyectos antes de eliminarlos de PLM.
+
+## Lanzadores
+
+Linux: búsqueda en PATH absoluto y ubicaciones comunes de `codex-desktop`, `claude-desktop` y `antigravity`. No se usa `codex`, `claude` o `agy -p` como sustituto de la aplicación de escritorio.
+
+macOS: bundles en `/Applications` y `~/Applications`; apertura mediante `/usr/bin/open -a` con argumentos separados. Windows: candidatos conocidos en AppData y Program Files. La localización mediante selector cubre instalaciones que no estén en esas rutas, aunque la compatibilidad con paquetes de Microsoft Store requiere una prueba específica.
+
+Un ejecutable seleccionado por el usuario se ejecuta directamente, sin shell, argumentos de modelos ni credenciales añadidas. Detectar un archivo no acredita autenticidad o firma: el usuario debe elegir su instalación oficial. El resultado del lanzamiento solo indica creación del proceso, no que su ventana haya cargado correctamente.
+
+## Futuras integraciones
+
+Cada capacidad deberá definirse por proveedor: abrir aplicación, abrir proyecto, leer exportación documentada, importar contexto, continuar sesión, inferencia. Se habilitarán individualmente, con estado real visible y pruebas. Una integración oficial de Codex no presupone permiso para hacer lo mismo con Antigravity.
+
+Incrustar ventanas externas es una investigación independiente. No se utiliza una webview como sustituto de una aplicación instalada. Los límites de macOS y Wayland impiden asumir que el reparentado de ventanas ajenas sea portable. La experiencia base debe funcionar con ventanas separadas.

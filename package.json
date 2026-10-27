@@ -1,0 +1,27 @@
+{
+  "name": "plm-poors-llm",
+  "productName": "PLM",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Un espacio local para continuar tu trabajo entre aplicaciones de IA.",
+  "type": "module",
+  "main": "src/main.mjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.mjs",
+    "test:desktop": "node scripts/test-desktop.mjs",
+    "check": "node scripts/check.mjs",
+    "sandbox": "node scripts/create-sandbox.mjs",
+    "demo": "node scripts/demo.mjs",
+    "package": "node scripts/package.mjs"
+  },
+  "devDependencies": {
+    "@electron/packager": "20.3.0",
+    "electron": "45.0.0",
+    "playwright": "1.64.1",
+    "prettier": "3.9.10"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

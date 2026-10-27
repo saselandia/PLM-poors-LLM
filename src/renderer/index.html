@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; font-src 'self'; base-uri 'none'; form-action 'none'; frame-src 'none'; object-src 'none'"
+    />
+    <title>PLM — poors LLM</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div id="app"><div class="loading">Preparando tu espacio…</div></div>
+    <dialog id="project-dialog" aria-labelledby="project-dialog-title">
+      <form id="project-form">
+        <div class="dialog-heading">
+          <span class="eyebrow">UN NUEVO PUNTO DE PARTIDA</span
+          ><button type="button" data-action="close-dialog" aria-label="Cerrar">×</button>
+        </div>
+        <h2 id="project-dialog-title">Crea tu proyecto</h2>
+        <p>Un lugar para el contexto que quieres conservar.</p>
+        <label
+          >Nombre<input
+            name="name"
+            placeholder="Ej. PLM — poors LLM"
+            required
+            maxlength="120"
+            autofocus
+        /></label>
+        <label
+          >¿Qué quieres conseguir?<textarea
+            name="goal"
+            placeholder="Describe el objetivo que compartirás entre herramientas."
+            maxlength="20000"
+            rows="4"
+          ></textarea>
+        </label>
+        <label>Carpeta de trabajo <span class="subtle">opcional</span></label>
+        <div class="folder-picker">
+          <span id="chosen-folder">Sin carpeta seleccionada</span
+          ><button type="button" data-action="choose-folder" class="secondary">
+            Elegir carpeta
+          </button>
+        </div>
+        <div class="dialog-footer">
+          <button type="button" data-action="close-dialog" class="secondary">Cancelar</button
+          ><button class="primary" type="submit">Crear proyecto <span>↗</span></button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="preview-dialog" class="preview-dialog" aria-labelledby="preview-title">
+      <div class="dialog-heading">
+        <span class="eyebrow">CONTEXTO PORTABLE</span
+        ><button type="button" data-action="close-dialog" aria-label="Cerrar">×</button>
+      </div>
+      <h2 id="preview-title">Esto es lo que compartirás</h2>
+      <p>Revisa el contenido antes de pegarlo en la otra aplicación.</p>
+      <pre id="preview-content"></pre>
+      <div class="dialog-footer">
+        <button type="button" data-action="close-dialog" class="secondary">Cerrar</button
+        ><button type="button" data-action="copy" class="primary">Copiar contexto ↗</button>
+      </div>
+    </dialog>
+    <div id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

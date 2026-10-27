@@ -1,0 +1,17 @@
+name: Verify PLM
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  core:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node scripts/check.mjs
+      - run: node --test test/model.test.mjs test/store.test.mjs test/launchers.test.mjs
