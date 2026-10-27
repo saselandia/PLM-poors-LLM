@@ -41,8 +41,20 @@ try {
   await page.getByRole('button', { name: 'Crear mi primer proyecto' }).click();
   await page.getByRole('textbox', { name: 'Nombre', exact: true }).fill('PLM — poors LLM');
   await page
-    .getByRole('textbox', { name: '¿Qué quieres conseguir?' })
+    .getByRole('textbox', { name: 'Contexto duro', exact: true })
     .fill('Continuar la misma tarea entre Codex, Claude y Antigravity.');
+  assert.equal(await page.getByRole('radio', { name: 'Solo una conversación' }).isChecked(), true);
+  assert.equal(await page.locator('#project-folder-selection').isVisible(), false);
+  assert.equal(
+    await page
+      .getByRole('textbox', { name: 'Contexto duro', exact: true })
+      .getAttribute('placeholder'),
+    'ejemplos: En cada mensaje de esta conversacion se usara git para especificar que se ha hecho en cada prompt.',
+  );
+  await page.getByRole('radio', { name: 'Carpeta con esta conversación' }).check();
+  await page.getByRole('button', { name: 'Crear proyecto', exact: false }).click();
+  await page.getByRole('status').filter({ hasText: 'Elige una carpeta' }).waitFor();
+  assert.equal((await page.evaluate(() => window.plm.workspace())).projects.length, 0);
   await desktop.evaluate(({ dialog }, folder) => {
     dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [folder] });
   }, path.resolve('sandbox/PLM- poors LLM'));
@@ -125,6 +137,7 @@ try {
   await page.getByRole('button', { name: 'Copiar petición para la IA' }).click();
   const request = await desktop.evaluate(({ clipboard }) => clipboard.readText());
   assert.ok(request.includes('plm.md') && request.includes('máximo de 500 líneas'));
+  assert.ok(request.includes('Si el proyecto usaba Git') && request.includes('repositorios'));
   await desktop.evaluate(({ dialog }, file) => {
     dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [file] });
   }, contextPath);
@@ -180,6 +193,30 @@ try {
   assert.equal(final.projects.length, 3);
   assert.equal(final.projects[2].importedContext, base);
   assert.equal(final.projects[2].preferredModel, 'sonnet');
+  await page.getByRole('button', { name: 'Nuevo proyecto', exact: false }).click();
+  await page.getByRole('textbox', { name: 'Nombre', exact: true }).fill('Solo conversación');
+  await page
+    .getByRole('textbox', { name: 'Contexto duro', exact: true })
+    .fill(
+      'En cada mensaje de esta conversacion se usara git para especificar que se ha hecho en cada prompt.',
+    );
+  await page.getByRole('radio', { name: 'Carpeta con esta conversación' }).check();
+  await desktop.evaluate(({ dialog }, folder) => {
+    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [folder] });
+  }, directory);
+  await page.getByRole('button', { name: 'Elegir carpeta' }).click();
+  await page.getByRole('radio', { name: 'Solo una conversación' }).check();
+  assert.equal(await page.locator('#project-folder-selection').isVisible(), false);
+  await page.screenshot({ path: path.join(output, 'new-conversation.png'), fullPage: true });
+  await page.getByRole('button', { name: 'Crear proyecto', exact: false }).click();
+  await page.getByRole('heading', { name: 'Solo conversación', exact: true }).waitFor();
+  const solo = (await page.evaluate(() => window.plm.workspace())).projects[3];
+  assert.equal(solo.folder, '');
+  assert.ok(solo.goal.includes('En cada mensaje'));
+  await page.getByRole('button', { name: 'Revisar contexto' }).click();
+  await page.locator('#preview-dialog').waitFor({ state: 'visible' });
+  assert.ok((await page.locator('#preview-content').textContent()).includes('## Contexto duro'));
+  assert.ok((await page.locator('#preview-content').textContent()).includes(solo.goal));
   assert.deepEqual(rendererErrors, []);
   console.log(
     'Desktop E2E: creación, contexto, portapapeles, exportación/importación, XSS, aislamiento y reinicio correctos.',

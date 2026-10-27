@@ -1,8 +1,10 @@
-# Verificación del prototipo 0.2.0
+# Verificación del prototipo 0.2.1
 
 Fecha: 27 de octubre de 2026. Entorno local: Linux x64 con sesión gráfica Wayland. Electron 45.0.0; Node.js 24.22.1 para herramientas de desarrollo.
 
 ## Comprobaciones realizadas
+
+En 0.2.1, el flujo de escritorio comprueba las dos opciones de creación: exige una carpeta cuando se elige vincularla y elimina la selección anterior al pasar a Solo una conversación. También verifica el placeholder de Contexto duro, su conservación en el proyecto y el traspaso, y la referencia a repositorios Git en la petición copiada.
 
 La versión 0.2 añade 3 pruebas del contexto (17 en total): cómputo exacto de las 500 líneas, normalización UTF-8/CRLF, catálogo ordenado con Mid por defecto, compatibilidad de proyectos anteriores y persistencia del contexto/modelo en exportación e importación. El flujo de escritorio incluye petición copiable, rechazo de 501 líneas, cancelación sin crear proyectos, importación de 500 líneas, elección y cambio de modelo y conservación tras reiniciar.
 

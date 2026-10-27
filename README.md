@@ -4,7 +4,7 @@
 
 PLM es una aplicación de escritorio experimental para organizar el trabajo que realizas con **Codex, Claude Desktop y Antigravity**. Conserva tus objetivos, decisiones y conversaciones en tu equipo y prepara el contexto que quieras llevarte a la siguiente aplicación.
 
-La versión **0.2.0** funciona como un organizador local y un lanzador. Cada herramienta se utiliza en su aplicación original, con su propia cuenta, suscripción e interfaz. El traspaso de contexto es manual.
+La versión **0.2.1** funciona como un organizador local y un lanzador. Cada herramienta se utiliza en su aplicación original, con su propia cuenta, suscripción e interfaz. El traspaso de contexto es manual.
 
 ## Para qué sirve
 
@@ -32,10 +32,20 @@ Ejemplo: trabajas una solución en Codex, registras las decisiones en PLM, prepa
 
 Abrir una herramienta no abre automáticamente un proyecto o una sesión. Copiar o exportar contexto tampoco confirma que se haya enviado o leído en el destino.
 
+## Nuevo proyecto y contexto duro
+
+Al crear un proyecto puedes elegir **Solo una conversación**, sin carpeta, o **Carpeta con esta conversación**, que permite seleccionar una carpeta existente. La opción sin carpeta es la inicial; si vuelves a ella después de seleccionar una carpeta, se elimina esa vinculación antes de crear el proyecto.
+
+El campo **Contexto duro** sirve para conservar las instrucciones de la conversación y se incluye en los traspasos. Su texto de ayuda es:
+
+> ejemplos: En cada mensaje de esta conversacion se usara git para especificar que se ha hecho en cada prompt.
+
+El ejemplo es un placeholder, no una instrucción que se guarde automáticamente. Puedes editar el contexto duro después desde la pestaña Contexto. Los valores de los proyectos anteriores se conservan.
+
 ## Importar contexto de una conversación
 
 1. Abre el desplegable **Importar contexto** de la barra lateral.
-2. Pulsa **Copiar petición para la IA** y pégala en la conversación de la que quieras conservar contexto. La petición pide un archivo **plm.md** con el proyecto resumido para que otro agente pueda continuar: objetivo, requisitos, decisiones, estado real, archivos relevantes, pruebas y próximos pasos.
+2. Pulsa **Copiar petición para la IA** y pégala en la conversación de la que quieras conservar contexto. La petición pide un archivo **plm.md** con el proyecto resumido para que otro agente pueda continuar: objetivo, requisitos, decisiones, estado real, archivos relevantes, pruebas y próximos pasos. Si se usaba Git, también pide identificar los repositorios, URLs conocidas sin credenciales, ramas, commits relevantes y cambios pendientes, sin inventar información.
 3. Guarda o descarga la respuesta como Markdown y pulsa **Añadir plm.md**.
 4. Revisa el archivo y elige el modelo en el menú que aparece. **Mid es lo recomendado para empezar**, con **Terra, Gemini Flash, Claude Haiku y Claude Sonnet**.
 5. Confirma **Importar contexto**. El archivo y la preferencia de modelo se guardan en una nueva conversación de PLM, sin enviar nada a un proveedor. Puedes cambiar después el modelo en **Modelo de continuación**.

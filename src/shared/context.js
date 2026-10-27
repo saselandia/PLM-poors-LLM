@@ -57,6 +57,7 @@ Incluye, de forma clara y compacta:
 7. Comandos de instalación, ejecución y pruebas, cuando proceda.
 8. Errores conocidos, riesgos y bloqueos actuales.
 9. Próximos pasos priorizados e instrucciones concretas para el siguiente agente.
+10. Si el proyecto usaba Git, aplícalo al resumen e indica en qué repositorios se trabajaba: nombres y URLs conocidas sin credenciales, ramas, commits relevantes y cambios pendientes, solo si constan en la conversación. No inventes repositorios ni estados de Git.
 
 Conserva los detalles necesarios para continuar, sin copiar el historial completo. No inventes datos: distingue los hechos comprobados de las suposiciones. No incluyas contraseñas, tokens, claves ni información sensible innecesaria.
 

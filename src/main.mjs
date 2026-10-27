@@ -136,6 +136,13 @@ handle('folder:choose', async () => {
 handle('project:create', async (input) => {
   if (!input || typeof input !== 'object') throw new Error('Proyecto no válido.');
   const folder = input.folder || '';
+  const scope = input.scope ?? (folder ? 'folder' : 'conversation');
+  if (!['folder', 'conversation'].includes(scope))
+    throw new Error('Elige carpeta o solo conversación.');
+  if (scope === 'folder' && !folder)
+    throw new Error('Elige una carpeta para guardar esta conversación.');
+  if (scope === 'conversation' && folder)
+    throw new Error('Una conversación sin carpeta no puede tener una carpeta vinculada.');
   if (folder && !selectedFolders.has(folder)) throw new Error('Selecciona la carpeta desde PLM.');
   const project = createProject({ name: input.name, goal: input.goal ?? '', folder });
   await store.mutate((state) => {
@@ -149,7 +156,7 @@ handle('project:update', async (id, input) => {
   await update(id, (p) => ({
     ...p,
     name: text(input.name, 'Nombre', 120, true),
-    goal: text(input.goal, 'Objetivo', 20_000),
+    goal: text(input.goal, 'Contexto duro', 20_000),
     decisions: text(input.decisions, 'Decisiones'),
     nextSteps: text(input.nextSteps, 'Próximos pasos'),
     updatedAt: new Date().toISOString(),
@@ -302,7 +309,7 @@ handle('context:import', async (input) => {
   const project = {
     ...createProject({
       name: input.name,
-      goal: 'Continuar el proyecto a partir del contexto de plm.md.',
+      goal: '',
     }),
     importedContext: content,
     preferredModel: model.id,

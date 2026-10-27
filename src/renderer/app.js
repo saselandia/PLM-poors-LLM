@@ -127,7 +127,7 @@ function context(p) {
   const base = p.importedContext
     ? `<details class="import-preview saved-context"><summary>plm.md · ${contextText(p.importedContext).lines} / 500 líneas · contexto importado</summary><pre>${escape(p.importedContext)}</pre></details>`
     : '';
-  return `${base}<form id="context-form" class="context-form"><label>Nombre del proyecto<input name="name" value="${escape(draft.name)}" maxlength="120" required></label><label>Objetivo<textarea name="goal" rows="3" maxlength="20000" placeholder="El resultado que quieres conseguir">${escape(draft.goal)}</textarea></label><label>Decisiones tomadas<textarea name="decisions" rows="4" maxlength="100000" placeholder="Qué habéis decidido y por qué">${escape(draft.decisions)}</textarea></label><label>Próximos pasos<textarea name="nextSteps" rows="4" maxlength="100000" placeholder="Qué debería hacer la siguiente herramienta">${escape(draft.nextSteps)}</textarea></label><div class="form-actions"><span>Guarda los cambios antes de preparar un traspaso.</span><button type="submit" class="primary">Guardar contexto ${icon('arrow')}</button></div></form>`;
+  return `${base}<form id="context-form" class="context-form"><label>Nombre del proyecto<input name="name" value="${escape(draft.name)}" maxlength="120" required></label><label>Contexto duro<textarea name="goal" rows="3" maxlength="20000" placeholder="ejemplos: En cada mensaje de esta conversacion se usara git para especificar que se ha hecho en cada prompt.">${escape(draft.goal)}</textarea></label><label>Decisiones tomadas<textarea name="decisions" rows="4" maxlength="100000" placeholder="Qué habéis decidido y por qué">${escape(draft.decisions)}</textarea></label><label>Próximos pasos<textarea name="nextSteps" rows="4" maxlength="100000" placeholder="Qué debería hacer la siguiente herramienta">${escape(draft.nextSteps)}</textarea></label><div class="form-actions"><span>Guarda los cambios antes de preparar un traspaso.</span><button type="submit" class="primary">Guardar contexto ${icon('arrow')}</button></div></form>`;
 }
 function activity(p) {
   return `<div class="activity-list">${
@@ -154,7 +154,7 @@ function handoffPanel(p) {
           `<button data-target="${id}" class="${target === id ? 'selected' : ''}" aria-pressed="${target === id}"><span class="tiny-mark ${id}">${tool.mark}</span>${tool.name}</button>`,
       )
       .join('')}</div>
-    <div class="context-summary">${p.importedContext ? `<div><span>${icon('edit')} plm.md · ${contextText(p.importedContext).lines} líneas</span><span>Siempre</span></div>` : ''}<div><span>${icon('edit')} Objetivo y decisiones</span><span>Siempre</span></div><label><span>${icon('chat')} Historial de conversación <small>${p.messages.length} entradas</small></span><input id="include-history" type="checkbox" ${includeHistory ? 'checked' : ''}></label><label><span>${icon('folder')} Ruta de la carpeta <small>Sin adjuntar archivos</small></span><input id="include-folder" type="checkbox" ${includeFolder ? 'checked' : ''} ${p.folder ? '' : 'disabled'}></label></div>
+    <div class="context-summary">${p.importedContext ? `<div><span>${icon('edit')} plm.md · ${contextText(p.importedContext).lines} líneas</span><span>Siempre</span></div>` : ''}<div><span>${icon('edit')} Contexto duro y decisiones</span><span>Siempre</span></div><label><span>${icon('chat')} Historial de conversación <small>${p.messages.length} entradas</small></span><input id="include-history" type="checkbox" ${includeHistory ? 'checked' : ''}></label><label><span>${icon('folder')} Ruta de la carpeta <small>Sin adjuntar archivos</small></span><input id="include-folder" type="checkbox" ${includeFolder ? 'checked' : ''} ${p.folder ? '' : 'disabled'}></label></div>
     <button class="preview-button" data-action="preview">Revisar contexto ${icon('arrow')}</button>
     <div class="handoff-buttons"><button class="primary" data-action="copy">${icon('copy')} Copiar contexto</button><button class="secondary" data-action="export-handoff" aria-label="Exportar contexto Markdown" title="Exportar Markdown">${icon('download')}</button></div>
     <div class="handoff-instructions"><div class="step"><span>1</span><p>Copia y revisa tu contexto.</p></div><div class="step"><span>2</span><p>Abre ${selectedTool.name} y pégalo en su chat.</p></div><button class="launch-target" data-launch="${target}" ${providers.find((item) => item.id === target)?.installed ? '' : 'disabled'}>Abrir ${selectedTool.name} ${icon('external')}</button></div>
@@ -255,6 +255,7 @@ document.addEventListener('click', (event) => {
         case 'new':
           chosenFolder = '';
           $('#project-form').reset();
+          $('#project-folder-selection').hidden = true;
           $('#chosen-folder').textContent = 'Sin carpeta seleccionada';
           $('#project-dialog').showModal();
           break;
@@ -333,6 +334,14 @@ document.addEventListener('click', (event) => {
   );
 });
 document.addEventListener('change', (event) => {
+  if (event.target.form?.id === 'project-form' && event.target.name === 'scope') {
+    const withFolder = event.target.value === 'folder';
+    $('#project-folder-selection').hidden = !withFolder;
+    if (!withFolder) {
+      chosenFolder = '';
+      $('#chosen-folder').textContent = 'Sin carpeta seleccionada';
+    }
+  }
   if (event.target.id === 'continuation-model') {
     const control = event.target;
     control.disabled = true;

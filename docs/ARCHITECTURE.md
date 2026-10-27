@@ -22,6 +22,8 @@ Un proyecto tiene ID propio, nombre, carpeta local opcional, objetivo, decisione
 
 Los proyectos de PLM y las sesiones de los proveedores son entidades distintas. La interfaz usa un historial común mantenido por el usuario. No se escriben IDs, sesiones o bases internas de otras aplicaciones.
 
+La creación distingue Solo una conversación y Carpeta con esta conversación; la segunda exige una carpeta elegida por el usuario. El tipo se deduce de la vinculación, sin cambiar el esquema. El campo que la interfaz llama Contexto duro conserva la clave `goal` para mantener los datos anteriores, y se incluye con ese título en los traspasos.
+
 Las exportaciones JSON usan `format: plm-project` y `version: 1`. La importación valida el esquema, genera un ID nuevo, descarta propiedades desconocidas y elimina la carpeta local. Las rutas de aplicaciones no forman parte del archivo portable. El Markdown puede excluir el historial y omite la carpeta salvo selección explícita.
 
 El contexto incluye advertencias de procedencia y conserva el texto histórico sin interpretarlo. Esto no constituye una defensa completa contra instrucciones maliciosas en el contenido. Siempre hay revisión manual antes del uso en otra aplicación.

@@ -1233,6 +1233,44 @@ dialog p {
   padding: 11px;
   margin-top: -7px;
 }
+.scope-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  border: 0;
+  padding: 0;
+  margin: 0 0 20px;
+}
+.scope-options legend {
+  font-size: 11px;
+  color: #b2c1a7;
+  margin-bottom: 10px;
+}
+.scope-options .scope-option {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid #3b4735;
+  border-radius: 6px;
+  padding: 12px;
+  margin: 0;
+  background: #171e14;
+  cursor: pointer;
+}
+.scope-options .scope-option:has(input:checked) {
+  border-color: #9ab780;
+  background: #283520;
+  color: #dbeace;
+}
+.scope-options .scope-option input {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  padding: 0;
+  accent-color: #c6e5ac;
+  flex-shrink: 0;
+}
 .folder-picker > span {
   font-size: 10px;
   color: #8e9d81;
