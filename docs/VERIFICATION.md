@@ -12,6 +12,8 @@ Fecha: 27 de octubre de 2026. Entorno local: Linux x64 con sesión gráfica Wayl
 - Arranque normal, sin depurador, en desarrollo y contra el paquete Linux: correcto. El lanzador espera una confirmación de que la interfaz se ha inicializado y la ventana es visible. La segunda apertura recupera la misma instancia.
 - Interfaz a 480 px: sin desbordamiento horizontal; revisión del contexto operativa.
 - Acceso Linux `.desktop` instalado y validado, con registro de errores y sin requerir Node para abrir el paquete.
+- Apertura mediante `gtk-launch dev.plm.desktop`: confirmación de interfaz inicializada y ventana visible. No se deduce el éxito únicamente de la creación del proceso.
+- CI remoto: sintaxis y 14 pruebas del núcleo correctas en Linux, macOS y Windows. [Ejecución verificada](https://github.com/saselandia/PLM-poors-LLM/actions/runs/40451610987). La primera ejecución detectó rutas construidas con la plataforma anfitriona al simular otra; se corrigió seleccionando explícitamente la semántica de rutas del sistema destino.
 
 El flujo de escritorio crea un proyecto con carpeta, añade historial, modifica decisiones, exige guardar el contexto pendiente, previsualiza un traspaso, comprueba la copia, exporta e importa un proyecto y verifica la persistencia después de reiniciar. También comprueba que una entrada con HTML se representa como texto, y que el renderer no expone `require` ni `process`. No sustituye una auditoría de seguridad.
 
@@ -27,4 +29,4 @@ La detección local encuentra los ejecutables de Codex, Claude Desktop y Antigra
 - Pruebas de continuidad reales, de importadores nativos y de integraciones oficiales: todavía no implementadas.
 - Firma, notarización, instaladores y actualización segura.
 
-La configuración de CI incluida cubre pruebas del núcleo en los tres sistemas cuando se conecte un remoto. No se ha ejecutado CI remoto en esta sesión.
+El CI verifica el núcleo en los tres sistemas. La interfaz y los lanzadores en aplicaciones reales de macOS y Windows siguen pendientes de validación nativa.
