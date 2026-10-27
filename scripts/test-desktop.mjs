@@ -45,12 +45,14 @@ try {
   await page.getByRole('button', { name: 'Crear mi primer proyecto' }).click();
   await page.getByRole('textbox', { name: 'Nombre', exact: true }).fill('PLM — poors LLM');
   await page
+    .locator('#project-dialog')
     .getByRole('textbox', { name: 'Contexto duro', exact: true })
     .fill('Continuar la misma tarea entre Codex, Claude y Antigravity.');
   assert.equal(await page.getByRole('radio', { name: 'Solo una conversación' }).isChecked(), true);
   assert.equal(await page.locator('#project-folder-selection').isVisible(), false);
   assert.equal(
     await page
+      .locator('#project-dialog')
       .getByRole('textbox', { name: 'Contexto duro', exact: true })
       .getAttribute('placeholder'),
     'ejemplos: En cada mensaje de esta conversacion se usara git para especificar que se ha hecho en cada prompt.',
@@ -64,6 +66,7 @@ try {
   }, path.resolve('sandbox/PLM- poors LLM'));
   await page.getByRole('button', { name: 'Elegir carpeta' }).click();
   await page.getByRole('button', { name: 'Crear proyecto', exact: false }).click();
+  await page.getByRole('tab', { name: 'Registro manual', exact: false }).click();
   await page
     .getByRole('textbox', { name: 'Texto para guardar' })
     .fill('Revisar el saludo de hello.mjs y conservar la decisión anterior.');
@@ -125,6 +128,7 @@ try {
   assert.equal((await page.evaluate(() => window.plm.workspace())).projects.length, 2);
   assert.equal(await page.evaluate(() => typeof window.require), 'undefined');
   assert.equal(await page.evaluate(() => typeof window.process), 'undefined');
+  await page.getByRole('tab', { name: 'Registro manual', exact: false }).click();
   const malicious = '<img src=x onerror="window.INJECTED=true">';
   await page.getByRole('textbox', { name: 'Texto para guardar' }).fill(malicious);
   await page.getByRole('button', { name: 'Guardar texto' }).click();
@@ -149,7 +153,7 @@ try {
     dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [file] });
   }, contextPath);
   await writeFile(contextPath, Array.from({ length: 501 }, (_, n) => `Línea ${n}`).join('\n'));
-  await page.getByRole('button', { name: 'Añadir plm.md' }).click();
+  await page.getByRole('button', { name: 'Añadir plm.md', exact: true }).click();
   await page.getByRole('status').filter({ hasText: '501 líneas' }).waitFor();
   assert.equal((await page.evaluate(() => window.plm.workspace())).projects.length, 2);
   const base =
@@ -159,7 +163,7 @@ try {
       ...Array.from({ length: 498 }, (_, n) => `Dato ${n}`),
     ].join('\n') + '\n';
   await writeFile(contextPath, base);
-  await page.getByRole('button', { name: 'Añadir plm.md' }).click();
+  await page.getByRole('button', { name: 'Añadir plm.md', exact: true }).click();
   await page.locator('#context-dialog').waitFor({ state: 'visible' });
   assert.equal(await page.locator('#import-model').inputValue(), 'terra');
   assert.deepEqual(
@@ -177,7 +181,7 @@ try {
   await page.keyboard.press('Escape');
   await page.locator('#context-dialog').waitFor({ state: 'hidden' });
   assert.equal((await page.evaluate(() => window.plm.workspace())).projects.length, 2);
-  await page.getByRole('button', { name: 'Añadir plm.md' }).click();
+  await page.getByRole('button', { name: 'Añadir plm.md', exact: true }).click();
   await page.locator('#context-dialog').waitFor({ state: 'visible' });
   await page.getByLabel('Modelo para empezar', { exact: true }).selectOption('flash');
   await page.getByRole('button', { name: 'Importar contexto', exact: false }).click();
@@ -210,6 +214,7 @@ try {
   await page.getByRole('button', { name: 'Nuevo proyecto', exact: false }).click();
   await page.getByRole('textbox', { name: 'Nombre', exact: true }).fill('Solo conversación');
   await page
+    .locator('#project-dialog')
     .getByRole('textbox', { name: 'Contexto duro', exact: true })
     .fill(
       'En cada mensaje de esta conversacion se usara git para especificar que se ha hecho en cada prompt.',
@@ -239,6 +244,11 @@ try {
   await page.getByRole('textbox', { name: 'Nombre', exact: true }).fill('Segunda conversación');
   await page.getByRole('button', { name: 'Crear conversación', exact: true }).click();
   await page.getByRole('heading', { name: 'Segunda conversación', exact: true }).waitFor();
+  assert.equal(
+    await page.getByRole('tab', { name: 'Contexto', exact: true }).getAttribute('aria-selected'),
+    'true',
+  );
+  await page.getByRole('tab', { name: 'Registro manual', exact: false }).click();
   const grouped = (await page.evaluate(() => window.plm.workspace())).projects;
   assert.equal(grouped[4].folder, grouped[0].folder);
   assert.equal(grouped[4].messages.length, 0);
@@ -281,6 +291,7 @@ try {
   await page.getByRole('button', { name: 'Abrir navegación', exact: true }).click();
   await page.locator('.folder-group [data-project]').first().click();
   assert.equal(await page.locator('.sidebar').isVisible(), false);
+  await page.getByRole('tab', { name: 'Registro manual', exact: false }).click();
   await page
     .getByText('Revisar el saludo de hello.mjs y conservar la decisión anterior.', { exact: true })
     .waitFor();
@@ -297,6 +308,7 @@ try {
     .locator('#applications-dialog')
     .getByRole('button', { name: 'Cerrar', exact: true })
     .click();
+  await page.getByRole('tab', { name: 'Registro manual', exact: false }).click();
   // Escape unwinds only the foreground layer and preserves drafts.
   await page.locator('.context-import-menu > summary').click();
   await page.locator('.request-details > summary').click();
@@ -346,6 +358,136 @@ try {
   await page.getByRole('button', { name: 'Aplicaciones', exact: true }).last().click();
   await page.keyboard.press('Escape');
   await page.locator('#applications-dialog').waitFor({ state: 'hidden' });
+  // Update this conversation rather than creating another one, using pasted or selected Markdown.
+  await page.setViewportSize({ width: 1440, height: 950 });
+  await page.getByRole('tab', { name: 'Contexto', exact: true }).click();
+  const beforeUpdate = await page.evaluate(() => window.plm.workspace());
+  const targetProject = beforeUpdate.projects[0];
+  await page.getByRole('button', { name: 'Pegar resumen', exact: true }).click();
+  await page
+    .getByRole('textbox', { name: 'Contenido de plm.md', exact: true })
+    .fill('Dato\n'.repeat(501));
+  await page.getByRole('button', { name: 'Revisar contexto pegado', exact: true }).click();
+  await page.getByRole('status').filter({ hasText: '501 líneas' }).waitFor();
+  assert.equal(await page.locator('#paste-context-dialog').isVisible(), true);
+  await page
+    .getByRole('textbox', { name: 'Contenido de plm.md', exact: true })
+    .fill('# Resumen A\nEstado confirmado A.');
+  await page.getByRole('button', { name: 'Revisar contexto pegado', exact: true }).click();
+  assert.equal(
+    await page.locator('#context-import-form [name="name"]').getAttribute('readonly'),
+    '',
+  );
+  await page.keyboard.press('Escape');
+  await page.locator('#context-dialog').waitFor({ state: 'hidden' });
+  assert.equal((await page.evaluate(() => window.plm.workspace())).projects[0].importedContext, '');
+  async function pasteUpdate(content) {
+    await page.getByRole('button', { name: 'Pegar resumen', exact: true }).click();
+    await page.getByRole('textbox', { name: 'Contenido de plm.md', exact: true }).fill(content);
+    await page.getByRole('button', { name: 'Revisar contexto pegado', exact: true }).click();
+  }
+  await pasteUpdate('# Resumen A\nEstado confirmado A.');
+  await page.getByRole('button', { name: 'Actualizar contexto', exact: true }).click();
+  await page.getByRole('status').filter({ hasText: 'Contexto actualizado' }).waitFor();
+  let updatedState = await page.evaluate(() => window.plm.workspace());
+  assert.equal(updatedState.projects.length, beforeUpdate.projects.length);
+  assert.equal(updatedState.projects[0].id, targetProject.id);
+  assert.equal(updatedState.projects[0].folder, targetProject.folder);
+  assert.equal(updatedState.projects[0].goal, targetProject.goal);
+  assert.deepEqual(updatedState.projects[0].messages, targetProject.messages);
+  await pasteUpdate('# Resumen B\nEstado confirmado B.');
+  await page.getByRole('button', { name: 'Actualizar contexto', exact: true }).click();
+  await page.getByRole('status').filter({ hasText: 'Contexto actualizado' }).waitFor();
+  await page.locator('.context-versions > summary').click();
+  await page.locator('.context-version > summary').first().click();
+  await page
+    .locator('.context-version')
+    .first()
+    .getByRole('button', { name: 'Restaurar esta versión', exact: true })
+    .click();
+  await page.getByRole('status').filter({ hasText: 'Versión restaurada' }).waitFor();
+  updatedState = await page.evaluate(() => window.plm.workspace());
+  assert.ok(updatedState.projects[0].importedContext.includes('Estado confirmado A.'));
+  assert.ok(
+    updatedState.projects[0].contextRevisions
+      .at(-1)
+      .importedContext.includes('Estado confirmado B.'),
+  );
+  await showHandoff(page);
+  await page.getByRole('button', { name: 'Revisar contexto', exact: true }).click();
+  const latestPreview = await page.locator('#preview-content').textContent();
+  assert.ok(latestPreview.includes('Estado confirmado A.'));
+  assert.ok(!latestPreview.includes('Estado confirmado B.'));
+  await page.keyboard.press('Escape');
+  await page.locator('#preview-dialog').waitFor({ state: 'hidden' });
+  await page.keyboard.press('Escape');
+  await pasteUpdate('# No sobrescribir cambios');
+  await page.evaluate(async () => {
+    const p = (await window.plm.workspace()).projects[0];
+    await window.plm.updateProject(p.id, { ...p, goal: p.goal + ' Cambio concurrente.' });
+  });
+  await page.getByRole('button', { name: 'Actualizar contexto', exact: true }).click();
+  await page.getByRole('status').filter({ hasText: 'El contexto ha cambiado' }).waitFor();
+  assert.ok(
+    (await page.evaluate(() => window.plm.workspace())).projects[0].importedContext.includes(
+      'Estado confirmado A.',
+    ),
+  );
+  await page.keyboard.press('Escape');
+  await page.locator('#context-dialog').waitFor({ state: 'hidden' });
+  await desktop.close();
+  desktop = null;
+  page = await start();
+  const restartedContext = (await page.evaluate(() => window.plm.workspace())).projects[0];
+  assert.ok(restartedContext.importedContext.includes('Estado confirmado A.'));
+  assert.ok(
+    restartedContext.contextRevisions.some((r) =>
+      r.importedContext.includes('Estado confirmado B.'),
+    ),
+  );
+  assert.ok(restartedContext.goal.includes('Cambio concurrente.'));
+  await desktop.evaluate(({ dialog }, file) => {
+    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [file] });
+  }, contextPath);
+  await writeFile(contextPath, '# Desde archivo\nResumen actualizado desde un plm.md.');
+  await page.getByRole('button', { name: '2. Actualizar plm.md', exact: true }).click();
+  await page.getByRole('button', { name: 'Actualizar contexto', exact: true }).click();
+  await page.getByRole('status').filter({ hasText: 'Contexto actualizado' }).waitFor();
+  const fileUpdated = (await page.evaluate(() => window.plm.workspace())).projects;
+  assert.equal(fileUpdated.length, beforeUpdate.projects.length);
+  assert.equal(fileUpdated[0].name, targetProject.name);
+  assert.equal(
+    fileUpdated[0].importedContext,
+    '# Desde archivo\nResumen actualizado desde un plm.md.',
+  );
+  await page.screenshot({ path: path.join(output, 'context-workspace.png') });
+  await page.setViewportSize({ width: 480, height: 760 });
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+  await page.screenshot({ path: path.join(output, 'context-workspace-narrow.png') });
+  await page.setViewportSize({ width: 1440, height: 950 });
+  const savedHardContext = fileUpdated[0].goal;
+  await page.locator('#context-form [name="goal"]').fill('Borrador sin guardar');
+  await page.getByRole('button', { name: 'Pegar resumen', exact: true }).click();
+  await page.getByRole('status').filter({ hasText: 'Guarda los cambios' }).waitFor();
+  assert.equal(await page.locator('#paste-context-dialog').isVisible(), false);
+  await page.locator('#context-form [name="goal"]').fill(savedHardContext);
+  await page.locator('.context-import-menu > summary').click();
+  await page.getByRole('button', { name: 'Pegar contexto', exact: true }).click();
+  await page
+    .getByRole('textbox', { name: 'Contenido de plm.md', exact: true })
+    .fill('# Nueva desde texto\nResumen independiente.');
+  await page.getByRole('button', { name: 'Revisar contexto pegado', exact: true }).click();
+  assert.equal(
+    await page.locator('#context-import-form [name="name"]').getAttribute('readonly'),
+    null,
+  );
+  assert.equal(await page.locator('#import-model').inputValue(), 'terra');
+  await page.getByRole('button', { name: 'Importar contexto', exact: true }).click();
+  await page.getByRole('status').filter({ hasText: 'Contexto importado' }).waitFor();
+  const pastedNew = (await page.evaluate(() => window.plm.workspace())).projects;
+  assert.equal(pastedNew.length, beforeUpdate.projects.length + 1);
+  assert.equal(pastedNew.at(-1).name, 'Nueva desde texto');
+  assert.equal(pastedNew[0].importedContext, fileUpdated[0].importedContext);
   assert.deepEqual(rendererErrors, []);
   console.log(
     'Desktop E2E: creación, contexto, portapapeles, exportación/importación, XSS, aislamiento y reinicio correctos.',

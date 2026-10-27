@@ -55,6 +55,15 @@ function date(value) {
     throw new Error('Fecha no válida.');
   return value;
 }
+const CONTEXT_FIELDS = ['goal', 'decisions', 'nextSteps', 'importedContext'];
+function contextSnapshot(value) {
+  return {
+    goal: text(value.goal, 'Contexto duro', 20_000),
+    decisions: text(value.decisions, 'Decisiones'),
+    nextSteps: text(value.nextSteps, 'Próximos pasos'),
+    importedContext: value.importedContext ? contextText(value.importedContext).content : '',
+  };
+}
 export function validateProject(value) {
   if (!value || typeof value !== 'object') throw new Error('Proyecto no válido.');
   const result = {
@@ -66,6 +75,13 @@ export function validateProject(value) {
     nextSteps: text(value.nextSteps, 'Próximos pasos', 100_000),
     importedContext: value.importedContext ? contextText(value.importedContext).content : '',
     preferredModel: modelById(value.preferredModel ?? DEFAULT_MODEL).id,
+    contextRevisions: list(value.contextRevisions ?? [], 'Versiones del contexto', 10).map(
+      (revision) => ({
+        id: id(revision.id),
+        createdAt: date(revision.createdAt),
+        ...contextSnapshot(revision),
+      }),
+    ),
     createdAt: date(value.createdAt),
     updatedAt: date(value.updatedAt),
     messages: list(value.messages, 'Historial', 2000).map((m) => {
@@ -91,7 +107,33 @@ export function validateProject(value) {
   };
   if (new Set(result.messages.map((m) => m.id)).size !== result.messages.length)
     throw new Error('Mensajes duplicados.');
+  if (new Set(result.contextRevisions.map((r) => r.id)).size !== result.contextRevisions.length)
+    throw new Error('Versiones de contexto duplicadas.');
   return result;
+}
+export function reviseContext(project, changes) {
+  const previous = validateProject(project);
+  const next = validateProject({ ...previous, ...changes });
+  const changed = CONTEXT_FIELDS.some((key) => previous[key] !== next[key]);
+  if (!changed) return next;
+  const revisions = [...previous.contextRevisions];
+  if (CONTEXT_FIELDS.some((key) => previous[key])) {
+    revisions.push({
+      id: randomUUID(),
+      createdAt: previous.updatedAt,
+      ...contextSnapshot(previous),
+    });
+  }
+  return validateProject({
+    ...next,
+    contextRevisions: revisions.slice(-10),
+    updatedAt: new Date().toISOString(),
+  });
+}
+export function restoreContext(project, revisionId) {
+  const revision = project.contextRevisions?.find((item) => item.id === revisionId);
+  if (!revision) throw new Error('No se ha encontrado esta versión del contexto.');
+  return reviseContext(project, contextSnapshot(revision));
 }
 export function emptyState() {
   return { version: 1, projects: [], launchers: {} };

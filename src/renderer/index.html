@@ -89,6 +89,33 @@
         Volver a detectar aplicaciones
       </button>
     </dialog>
+    <dialog id="paste-context-dialog" class="preview-dialog" aria-labelledby="paste-context-title">
+      <form id="paste-context-form">
+        <div class="dialog-heading">
+          <h2 id="paste-context-title">Pegar contexto</h2>
+          <button type="button" data-action="close-dialog" aria-label="Cerrar">×</button>
+        </div>
+        <p>
+          Pega el resumen Markdown que has pedido en la aplicación original. Podrás revisarlo antes
+          de guardarlo.
+        </p>
+        <label
+          >Contenido de plm.md<textarea
+            id="pasted-context"
+            name="content"
+            rows="12"
+            maxlength="100000"
+            required
+            placeholder="# Proyecto&#10;Objetivo, estado actual, decisiones y próximos pasos…"
+          ></textarea>
+        </label>
+        <p id="paste-line-count" aria-live="polite">Máximo 500 líneas · 100.000 caracteres</p>
+        <div class="dialog-footer">
+          <button type="button" class="secondary" data-action="close-dialog">Cancelar</button
+          ><button class="primary" type="submit">Revisar contexto pegado</button>
+        </div>
+      </form>
+    </dialog>
     <div id="toast" role="status" aria-live="polite"></div>
     <dialog id="context-dialog" class="preview-dialog" aria-labelledby="context-import-title">
       <form id="context-import-form">

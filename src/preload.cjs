@@ -26,6 +26,8 @@ contextBridge.exposeInMainWorld(
     contextRequest: invoke('context:request'),
     copyContextRequest: invoke('context:copy-request'),
     chooseContext: invoke('context:choose'),
+    stageContext: invoke('context:stage'),
+    restoreContext: invoke('context:restore'),
     discardContext: invoke('context:discard'),
     importContext: invoke('context:import'),
     selectModel: invoke('project:model'),

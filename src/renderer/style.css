@@ -1935,3 +1935,59 @@ body,
     margin-top: 12px;
   }
 }
+.context-workflow {
+  padding: 18px 0;
+  border-bottom: 1px solid #34402f;
+}
+.context-workflow h2 {
+  font-size: 19px;
+  margin: 0 0 10px;
+  font-weight: 500;
+}
+.context-workflow p {
+  line-height: 1.8;
+  color: #a2b197;
+  max-width: 780px;
+}
+.workflow-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+}
+.context-workflow .workflow-status {
+  font-size: 11px;
+}
+.context-versions {
+  border-top: 1px solid #34402f;
+  padding: 20px 0;
+}
+.context-versions summary {
+  cursor: pointer;
+  color: #b6c6a9;
+  line-height: 1.8;
+}
+.context-version {
+  margin: 14px 0;
+  padding: 12px;
+  border: 1px solid #34402f;
+  border-radius: 6px;
+}
+.context-version pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 240px;
+  overflow: auto;
+  font-size: 11px;
+  line-height: 1.7;
+}
+.context-versions p,
+#paste-line-count {
+  color: #9dac91;
+  font-size: 11px;
+  line-height: 1.7;
+}
+#pasted-context {
+  min-height: 180px;
+  font-family: ui-monospace, monospace;
+}

@@ -4,7 +4,7 @@
 
 PLM es una aplicación de escritorio experimental para organizar el trabajo que realizas con **Codex, Claude Desktop y Antigravity**. Conserva tus objetivos, decisiones y conversaciones en tu equipo y prepara el contexto que quieras llevarte a la siguiente aplicación.
 
-La versión **0.2.1** funciona como un organizador local y un lanzador. Cada herramienta se utiliza en su aplicación original, con su propia cuenta, suscripción e interfaz. El traspaso de contexto es manual.
+La versión **0.4.0** funciona como un organizador local y un lanzador. Cada herramienta se utiliza en su aplicación original, con su propia cuenta, suscripción e interfaz. El traspaso de contexto es manual.
 
 ## Para qué sirve
 
@@ -54,7 +54,7 @@ El límite es **500 líneas**, con un máximo adicional de 100.000 caracteres. U
 
 El selector se ordena en **Low → Mid → High → Frontier**. Son categorías orientativas de PLM para organizar el trabajo, no una clasificación oficial de los proveedores ni una garantía de disponibilidad. La selección se guarda como preferencia: tú eliges ese modelo en la aplicación oficial. No se cambia automáticamente el modelo de Claude, Codex o Antigravity ni se hacen peticiones a sus servicios. Véanse las [fuentes y el catálogo](docs/MODELS.md).
 
-Las antiguas copias JSON siguen disponibles dentro del mismo desplegable como **Restaurar copia JSON**, y mediante **Exportar proyecto**. Los proyectos guardados antes de esta versión se conservan.
+Las antiguas copias JSON siguen disponibles dentro del mismo desplegable como **Restaurar copia JSON**, y mediante **Exportar conversación**. Los proyectos guardados antes de esta versión se conservan.
 
 ## Legalidad y condiciones de uso
 
@@ -117,10 +117,10 @@ Los paquetes de **Windows y macOS** siguen pendientes de validación nativa. Las
 
 1. Ejecuta `pnpm sandbox`: crea el repositorio local `sandbox/PLM- poors LLM`, con Git independiente y una tarea pequeña.
 2. Crea un proyecto en PLM y elige esa carpeta, o ejecuta `pnpm demo`.
-3. Añade una entrada al historial y guarda las decisiones en **Contexto**.
+3. En **Contexto**, copia la petición de resumen y úsala en tu conversación original. Añade el `plm.md` recibido o pulsa **Pegar resumen**.
 4. Elige una herramienta de destino y pulsa **Revisar contexto**.
 5. Copia el documento y pégalo tú en el chat de la aplicación oficial.
-6. Añade a PLM la respuesta que quieras conservar y continúa desde ahí.
+6. Cuando avances en la otra aplicación, pide un resumen actualizado y usa **Actualizar plm.md** en la misma conversación de PLM.
 
 ## Desarrollo y verificación
 
@@ -170,3 +170,18 @@ La barra lateral agrupa las conversaciones por su carpeta de trabajo. Despliega 
 El **Registro manual** muestra los textos añadidos por el usuario; escribir ahí y pulsar **Guardar texto** solo los guarda en PLM y no genera respuestas de IA. Las categorías describen el texto y la aplicación de origen es solo una etiqueta. Los chats externos no se sincronizan automáticamente. **Preparar contexto** abre el panel de modelo, revisión y copia del contexto; **Aplicaciones** permite abrir o configurar Codex, Claude y Antigravity. En ventanas estrechas, el botón de navegación abre la lista de carpetas. Eliminar una conversación solo elimina esa conversación de PLM, nunca su carpeta ni las demás conversaciones.
 
 Esc cierra el desplegable o panel activo. Los diálogos conservan su cierre nativo y los desplegables anidados se cierran antes que el diálogo que los contiene.
+
+## Continuar y actualizar el contexto (0.4.0)
+
+**Contexto** es la pestaña inicial de cada conversación. El registro manual es opcional: no hace falta copiar cada mensaje para usar PLM.
+
+1. Copia la petición de resumen y pégala en tu conversación de la aplicación original.
+2. Añade el Markdown con **Añadir plm.md / Actualizar plm.md** o usa **Pegar resumen**. Puedes revisar el contenido y el modelo antes de confirmar.
+3. Usa **Preparar contexto** para revisar y copiar lo que llevarás a la siguiente aplicación. Ábrela y pega tú el texto en su conversación.
+4. Vuelve a actualizar el resumen cuando avance el trabajo, conservando la misma conversación, carpeta, contexto duro, decisiones y registro manual.
+
+El desplegable de la barra lateral sigue permitiendo importar una conversación nueva. Actualizar desde su pestaña Contexto modifica la conversación seleccionada y conserva su nombre; no crea otra. Ambos métodos aceptan hasta 500 líneas y 100.000 caracteres. Cancelar no guarda ni actualiza nada.
+
+**Versiones anteriores del contexto** permite revisar y restaurar las diez últimas versiones no vacías de contexto duro, decisiones, próximos pasos y resumen. Restaurar también conserva una copia del estado sustituido, dentro de ese límite. Las versiones se guardan localmente y se incluyen en las copias JSON; los traspasos a modelos solo incluyen el contexto vigente. El límite general del espacio sigue siendo 8 MB. No son copias de seguridad independientes del archivo de trabajo.
+
+Si el contexto cambia mientras revisas una importación, PLM la rechaza para no sobrescribir cambios sin revisión. Los cambios sin guardar en el formulario también deben guardarse antes de actualizar o restaurar.

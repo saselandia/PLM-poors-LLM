@@ -18,7 +18,7 @@ El renderer no tiene Node, acceso directo al disco ni red. El preload expone fun
 
 ## Modelo de datos v1
 
-Un proyecto tiene ID propio, nombre, carpeta local opcional, objetivo, decisiones, próximos pasos, mensajes y registros de traspaso. Cada mensaje tiene rol, proveedor de origen y fecha. La atribución la introduce el usuario: no certifica que el proveedor generase ese texto. La versión inicial tiene una conversación por proyecto.
+Un proyecto tiene ID propio, nombre, carpeta local opcional, objetivo, decisiones, próximos pasos, mensajes y registros de traspaso. Cada mensaje tiene rol, proveedor de origen y fecha. La atribución la introduce el usuario: no certifica que el proveedor generase ese texto. Cada registro de proyecto representa una conversación; la interfaz agrupa los que comparten carpeta y permite crear nuevas conversaciones desde el grupo.
 
 Los proyectos de PLM y las sesiones de los proveedores son entidades distintas. La interfaz usa un historial común mantenido por el usuario. No se escriben IDs, sesiones o bases internas de otras aplicaciones.
 
@@ -53,3 +53,11 @@ Un ejecutable seleccionado por el usuario se ejecuta directamente, sin shell, ar
 Cada capacidad deberá definirse por proveedor: abrir aplicación, abrir proyecto, leer exportación documentada, importar contexto, continuar sesión, inferencia. Se habilitarán individualmente, con estado real visible y pruebas. Una integración oficial de Codex no presupone permiso para hacer lo mismo con Antigravity.
 
 Incrustar ventanas externas es una investigación independiente. No se utiliza una webview como sustituto de una aplicación instalada. Los límites de macOS y Wayland impiden asumir que el reparentado de ventanas ajenas sea portable. La experiencia base debe funcionar con ventanas separadas.
+
+## Actualización y revisiones de contexto (0.4)
+
+`context:stage` valida un Markdown pegado y `context:choose` valida un archivo elegido explícitamente. Ambos devuelven un token de revisión efímero, sin persistir nada. El proceso principal conserva contenido, destino y una comparación de los campos de contexto y modelo vigentes al añadirlo. El renderer no decide qué versión reemplaza: el destino está vinculado al token. Cancelar descarta el token; solo se mantiene una importación pendiente.
+
+Al confirmar, una nueva conversación conserva el flujo original. Para un destino existente se usa una mutación serializada y se comprueba que el contexto no haya cambiado. `reviseContext` conserva el ID, carpeta, mensajes e instrucciones; sustituye el resumen y el modelo elegido. Las ediciones del formulario y restauraciones usan la misma función de revisiones. El campo opcional `contextRevisions` contiene hasta diez instantáneas de los cuatro campos de contexto. Se valida al leer y al guardar, sin ejecutar Markdown ni incorporar las revisiones a los traspasos. Las copias JSON las conservan. Los límites por campo y los 8 MB globales siguen aplicándose; un guardado rechazado deja el estado anterior intacto.
+
+El renderer abre Contexto como vista inicial. La entrada manual es una pestaña secundaria. Las importaciones y restauraciones exigen guardar antes cualquier borrador del formulario; el borrador manual se mantiene independiente.

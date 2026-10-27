@@ -13,6 +13,8 @@ import {
   exportProject,
   importProject,
   recordHandoff,
+  reviseContext,
+  restoreContext,
   MAX_BYTES,
 } from './core/model.mjs';
 import { detectLaunchers, isLauncher, launchOfficial } from './core/launchers.mjs';
@@ -156,14 +158,18 @@ handle('project:create', async (input) => {
 });
 handle('project:update', async (id, input) => {
   if (!input || typeof input !== 'object') throw new Error('Cambios no válidos.');
-  await update(id, (p) => ({
-    ...p,
-    name: text(input.name, 'Nombre', 120, true),
-    goal: text(input.goal, 'Contexto duro', 20_000),
-    decisions: text(input.decisions, 'Decisiones'),
-    nextSteps: text(input.nextSteps, 'Próximos pasos'),
-    updatedAt: new Date().toISOString(),
-  }));
+  await update(id, (p) =>
+    reviseContext(p, {
+      name: text(input.name, 'Nombre', 120, true),
+      goal: text(input.goal, 'Contexto duro', 20_000),
+      decisions: text(input.decisions, 'Decisiones'),
+      nextSteps: text(input.nextSteps, 'Próximos pasos'),
+      updatedAt: new Date().toISOString(),
+    }),
+  );
+});
+handle('context:restore', async (id, revisionId) => {
+  await update(id, (p) => restoreContext(p, revisionId));
 });
 handle('message:add', async (id, input) => {
   await update(id, (p) => addMessage(p, input));
@@ -273,7 +279,41 @@ handle('context:request', () => CONTEXT_REQUEST);
 handle('context:copy-request', () => {
   clipboard.writeText(CONTEXT_REQUEST);
 });
-handle('context:choose', async () => {
+function contextVersion(p) {
+  return JSON.stringify([p.goal, p.decisions, p.nextSteps, p.importedContext, p.preferredModel]);
+}
+function stageContext(raw, filename, targetId) {
+  const context = contextText(raw);
+  const project = targetId ? projectFrom(store.snapshot(), targetId) : null;
+  const name =
+    project?.name ||
+    context.content
+      .match(/^#\s+(.+)$/m)?.[1]
+      ?.trim()
+      .slice(0, 120) ||
+    'Conversación importada';
+  const token = randomUUID();
+  pendingContexts.clear();
+  pendingContexts.set(token, {
+    content: context.content,
+    targetId: project?.id,
+    version: project ? contextVersion(project) : null,
+  });
+  return {
+    token,
+    name,
+    filename,
+    targetId: project?.id,
+    model: project?.preferredModel,
+    ...context,
+  };
+}
+handle('context:stage', (input) =>
+  stageContext(input?.content, 'Contexto pegado', input?.targetId),
+);
+handle('context:choose', async (targetId) => {
+  // Capture the target before the user opens the native picker.
+  const target = targetId ? projectFrom(store.snapshot(), targetId) : null;
   const result = await dialog.showOpenDialog(window, {
     title: 'Añadir plm.md de contexto',
     properties: ['openFile'],
@@ -291,24 +331,31 @@ handle('context:choose', async () => {
   } catch {
     throw new Error('Guarda plm.md como texto UTF-8 y vuelve a añadirlo.');
   }
-  const context = contextText(raw);
-  const title =
-    context.content
-      .match(/^#\s+(.+)$/m)?.[1]
-      ?.trim()
-      .slice(0, 120) || 'Conversación importada';
-  const token = randomUUID();
-  pendingContexts.clear();
-  pendingContexts.set(token, context.content);
-  return { token, name: title, filename: path.basename(file), ...context };
+  const staged = stageContext(raw, path.basename(file), target?.id);
+  if (target) pendingContexts.get(staged.token).version = contextVersion(target);
+  return staged;
 });
 handle('context:discard', (token) => {
   pendingContexts.delete(token);
 });
 handle('context:import', async (input) => {
-  const content = pendingContexts.get(input?.token);
-  if (!content) throw new Error('Vuelve a seleccionar el archivo plm.md.');
+  const staged = pendingContexts.get(input?.token);
+  if (!staged) throw new Error('Vuelve a añadir el contexto.');
+  const { content, targetId } = staged;
   const model = modelById(input.model);
+  if (targetId) {
+    let project;
+    await update(targetId, (p) => {
+      if (contextVersion(p) !== staged.version)
+        throw new Error(
+          'El contexto ha cambiado desde que lo añadiste. Cierra esta vista y vuelve a añadirlo para revisar la versión actual.',
+        );
+      project = reviseContext(p, { importedContext: content, preferredModel: model.id });
+      return project;
+    });
+    pendingContexts.delete(input.token);
+    return project;
+  }
   const project = {
     ...createProject({
       name: input.name,

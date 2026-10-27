@@ -57,3 +57,9 @@ Compartir contexto no comparte cuotas ni evita procesamiento. El siguiente model
 5. Firmar/notarizar y verificar los paquetes en los sistemas de destino antes de distribuirlos como producto estable.
 
 No se ha contactado con proveedores ni se han aceptado acuerdos en nombre del usuario.
+
+## Revisión para 0.4.0
+
+Se han vuelto a consultar las fuentes oficiales de OpenAI SIWC, Claude Code y Antigravity indicadas arriba el 27 de octubre de 2026. OpenAI distingue la autorización para usar el plan del acceso a conversaciones: SIWC no concede acceso al historial. Claude Code limita la autenticación de productos de terceros y distingue su binario oficial de un cliente propio. Antigravity mantiene las restricciones al uso de herramientas de terceros con su login de consumo.
+
+La versión 0.4.0 mejora el tratamiento de documentos locales: pegar Markdown elegido por el usuario, actualizar un resumen y recuperar versiones. No implementa autenticación, inferencia ni sincronización con servicios externos. Los botones de apertura siguen lanzando la aplicación original sin prompts. No se presupone autorización contractual para integrar las tres suscripciones ni se presenta el diseño como una garantía jurídica. Las integraciones oficiales continúan como trabajos separados por proveedor.

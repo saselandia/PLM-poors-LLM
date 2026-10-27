@@ -49,3 +49,11 @@ El CI verifica el núcleo en los tres sistemas. La interfaz y los lanzadores en 
 - El editor se identifica como registro manual; guardar no envía nada a un proveedor.
 - Esc cierra los desplegables anidados, los diálogos, la navegación estrecha, las carpetas y el panel de contexto, respetando el elemento que está delante.
 - La prueba de escritorio verifica la conservación del borrador y la devolución del foco al cerrar el panel, así como la cancelación de la importación por teclado.
+
+## Contexto y revisiones 0.4.0
+
+- Núcleo: conservación de identidad, carpeta y mensajes al actualizar; límite de diez versiones; restauración recuperable, exportaciones JSON y validación de versiones importadas.
+- Escritorio con perfil temporal: Contexto inicial, pegar y actualizar desde archivo, cancelar sin cambios, rechazar 501 líneas, conservar contexto duro y mensajes, evitar conversaciones duplicadas, restaurar y reiniciar.
+- Conflicto de edición durante una revisión: importación rechazada y contenido previo conservado.
+- Traspaso tras restauración: solo incluye la versión vigente del resumen.
+- Capturas revisadas del espacio de contexto a 1440 y 480 píxeles; datos sintéticos y ningún acceso a sesiones externas.

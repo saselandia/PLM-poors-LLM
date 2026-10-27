@@ -25,9 +25,9 @@ Objetivo: demostrar un ciclo real de continuidad mediante contexto portable, man
 
 ## Continuidad pendiente
 
-1. Varias conversaciones por proyecto e identificación opcional de sesiones externas mediante referencias documentadas.
+1. Varias conversaciones por carpeta ya disponibles; identificación opcional de sesiones externas mediante referencias documentadas pendiente.
 2. Importadores de exportaciones públicas y compatibles, con muestra anonimizada, atribución y pruebas por versión. No modificar bases privadas de proveedores.
-3. Historial de revisiones del contexto, recuperación y copias de seguridad locales.
+3. Historial de diez revisiones de contexto y recuperación disponibles; copias de seguridad independientes pendientes.
 4. Estimaciones de tamaño claramente aproximadas y selección de entradas para traspaso. Los resúmenes por modelo serán opcionales y tendrán uso explícito.
 5. Abrir carpetas o sesiones desde enlaces oficiales únicamente cuando estén documentados y probados para cada aplicación.
 6. Prueba manual: tarea breve en Codex, traspaso a Claude y continuación en Antigravity, comparando los resultados con el historial conservado.
@@ -42,3 +42,13 @@ Objetivo: demostrar un ciclo real de continuidad mediante contexto portable, man
 ## Distribución
 
 Configurar CI en macOS, Windows y Linux para pruebas del núcleo y empaquetado. Los binarios generados no se consideran validados solo por compilar. Firma, notarización, instaladores, actualización segura y requisitos jurídicos son hitos posteriores. El repositorio de pruebas es local; no se crea remoto o publicación automáticamente.
+
+## 0.4 — Contexto como flujo principal
+
+- [x] Contexto como pantalla inicial; registro manual opcional.
+- [x] Añadir Markdown pegado con revisión, modelo y límite de 500 líneas.
+- [x] Actualizar el resumen de una conversación existente sin duplicarla ni perder su carpeta o contexto duro.
+- [x] Versiones anteriores revisables y restauración; diez versiones no vacías por conversación.
+- [x] Rechazo de importaciones si el contexto cambió durante la revisión; cancelación sin escrituras.
+- [x] Revisión de condiciones oficiales por proveedor; ninguna reutilización de credenciales o inferencia en esta versión.
+- [ ] Sincronización real de chats mediante integraciones autorizadas y documentadas; no está incluida en este flujo de documentos.
