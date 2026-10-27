@@ -329,10 +329,15 @@ document.addEventListener('submit', (event) => {
     }
   });
 });
-try {
-  [workspace, providers] = await Promise.all([api.workspace(), api.providers()]);
-  selected = workspace.projects[0]?.id || null;
-  render();
-} catch (error) {
-  $('#app').textContent = `No se ha podido abrir PLM: ${error.message}`;
-}
+if (!api) {
+  $('#app').innerHTML =
+    '<main class="desktop-required"><span class="eyebrow">PLM — POORS LLM</span><h1>Abre PLM desde tu menú de aplicaciones</h1><p>Esta vista previa contiene la interfaz. Para guardar proyectos y abrir tus herramientas, utiliza la aplicación de escritorio instalada.</p><p>En Linux puedes iniciarla con <code>gtk-launch dev.plm.desktop</code> después de instalar el acceso.</p></main>';
+} else
+  try {
+    [workspace, providers] = await Promise.all([api.workspace(), api.providers()]);
+    selected = workspace.projects[0]?.id || null;
+    render();
+    await api.ready();
+  } catch (error) {
+    $('#app').textContent = `No se ha podido abrir PLM: ${error.message}`;
+  }

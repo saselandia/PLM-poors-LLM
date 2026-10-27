@@ -27,8 +27,13 @@ async function start() {
     clipboard.readText = () => content;
   });
   const page = await desktop.firstWindow();
+  await page.setViewportSize({ width: 1440, height: 950 });
   page.on('pageerror', (error) => rendererErrors.push(error.message));
   await page.getByRole('button', { name: 'Nuevo proyecto', exact: false }).waitFor();
+  assert.equal(
+    await desktop.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].isVisible()),
+    true,
+  );
   return page;
 }
 try {
@@ -71,6 +76,17 @@ try {
   assert.equal(await desktop.evaluate(({ clipboard }) => clipboard.readText()), preview);
   await page.getByRole('button', { name: 'Cerrar', exact: true }).last().click();
   await page.screenshot({ path: path.join(output, 'workspace.png'), fullPage: true });
+  await page.setViewportSize({ width: 480, height: 760 });
+  assert.equal(
+    await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    true,
+    'La interfaz debe caber en una ventana estrecha de un compositor Wayland.',
+  );
+  await page.getByRole('button', { name: 'Revisar contexto' }).click();
+  await page.locator('#preview-dialog').waitFor({ state: 'visible' });
+  await page.getByRole('button', { name: 'Cerrar', exact: true }).last().click();
+  await page.screenshot({ path: path.join(output, 'workspace-narrow.png'), fullPage: true });
+  await page.setViewportSize({ width: 1440, height: 950 });
 
   // Exercise native export/import through controlled dialog destinations.
   const exportPath = path.join(directory, 'export.plm.json');

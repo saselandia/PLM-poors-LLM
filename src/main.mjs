@@ -1,7 +1,7 @@
 import { app, BrowserWindow, Menu, ipcMain, dialog, clipboard, shell, session } from 'electron';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { readFile, stat, open } from 'node:fs/promises';
+import { readFile, stat, open, mkdir, writeFile } from 'node:fs/promises';
 import { Store } from './core/store.mjs';
 import {
   PROVIDERS,
@@ -25,6 +25,43 @@ app.setName('PLM');
 const store = new Store(app.getPath('userData'));
 let window;
 const selectedFolders = new Set();
+const pendingLaunches = new Set();
+let loaded = false;
+if (/^[a-f0-9-]{36}$/.test(process.env.PLM_LAUNCH_ID || ''))
+  pendingLaunches.add(process.env.PLM_LAUNCH_ID);
+
+async function acknowledgeLaunch(error) {
+  const status = {
+    pid: process.pid,
+    visible: Boolean(window && !window.isDestroyed() && window.isVisible()),
+    loaded,
+    ...(error ? { error: error.message } : {}),
+  };
+  await mkdir(app.getPath('userData'), { recursive: true, mode: 0o700 });
+  for (const launchId of pendingLaunches) {
+    await writeFile(
+      path.join(app.getPath('userData'), `launch-${launchId}.json`),
+      JSON.stringify({ ...status, launchId }),
+      { mode: 0o600 },
+    );
+  }
+  pendingLaunches.clear();
+}
+function presentWindow() {
+  if (!window || window.isDestroyed()) return;
+  if (window.isMinimized()) window.restore();
+  window.show();
+  window.focus();
+}
+function startupFailed(error) {
+  console.error('PLM: error al iniciar:', error.message);
+  void acknowledgeLaunch(error).catch(() => {});
+  dialog.showErrorBox(
+    'PLM no ha podido abrirse',
+    `${error.message}\nLos datos guardados se conservan.`,
+  );
+  app.quit();
+}
 
 function projectFrom(state, id) {
   const found = state.projects.find((p) => p.id === id);
@@ -81,6 +118,11 @@ function filename(name) {
 handle('workspace:read', () => {
   const { launchers, ...workspace } = store.snapshot();
   return workspace;
+});
+handle('window:ready', async () => {
+  loaded = true;
+  presentWindow();
+  await acknowledgeLaunch();
 });
 handle('folder:choose', async () => {
   const result = await dialog.showOpenDialog(window, { properties: ['openDirectory'] });
@@ -219,11 +261,11 @@ function createWindow() {
   window = new BrowserWindow({
     width: 1440,
     height: 950,
-    minWidth: 1060,
-    minHeight: 760,
+    minWidth: 480,
+    minHeight: 420,
     title: 'PLM — poors LLM',
     backgroundColor: '#111413',
-    show: false,
+    show: true,
     webPreferences: {
       preload: path.join(root, 'preload.cjs'),
       contextIsolation: true,
@@ -235,65 +277,70 @@ function createWindow() {
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   window.webContents.on('will-navigate', (event) => event.preventDefault());
   window.webContents.on('will-attach-webview', (event) => event.preventDefault());
-  window.once('ready-to-show', () => window.show());
-  window.loadURL(indexUrl);
+  window.webContents.on('render-process-gone', (_event, details) => {
+    if (details.reason !== 'clean-exit')
+      startupFailed(new Error(`La interfaz se ha detenido (${details.reason}).`));
+  });
+  loaded = false;
+  window.loadURL(indexUrl).then(presentWindow).catch(startupFailed);
 }
-if (!app.requestSingleInstanceLock()) app.quit();
+if (!app.requestSingleInstanceLock({ launchId: process.env.PLM_LAUNCH_ID || '' })) app.quit();
 else {
-  app.on('second-instance', () => {
-    if (window) {
-      if (window.isMinimized()) window.restore();
-      window.focus();
-    }
+  app.on('second-instance', (_event, _argv, _cwd, data) => {
+    if (/^[a-f0-9-]{36}$/.test(data?.launchId || '')) pendingLaunches.add(data.launchId);
+    presentWindow();
+    if (loaded) void acknowledgeLaunch().catch(startupFailed);
   });
-  app.whenReady().then(async () => {
-    try {
-      await store.load();
-    } catch (error) {
-      dialog.showErrorBox('PLM: archivo local conservado', error.message);
-      app.quit();
-      return;
-    }
-    session.defaultSession.setPermissionRequestHandler((_contents, _permission, callback) =>
-      callback(false),
-    );
-    session.defaultSession.setPermissionCheckHandler(() => false);
-    session.defaultSession.webRequest.onBeforeRequest((details, callback) =>
-      callback({
-        cancel: !details.url.startsWith('file://') && !details.url.startsWith('devtools://'),
-      }),
-    );
-    Menu.setApplicationMenu(
-      Menu.buildFromTemplate([
-        ...(process.platform === 'darwin' ? [{ role: 'appMenu' }] : []),
-        {
-          label: 'Edición',
-          submenu: [
-            { role: 'undo' },
-            { role: 'redo' },
-            { type: 'separator' },
-            { role: 'cut' },
-            { role: 'copy' },
-            { role: 'paste' },
-            { role: 'selectAll' },
-          ],
-        },
-        {
-          label: 'Ventana',
-          submenu: [
-            { role: 'reload' },
-            { role: 'togglefullscreen' },
-            { role: 'minimize' },
-            { role: 'close' },
-          ],
-        },
-      ]),
-    );
-    createWindow();
-    app.on('activate', () => {
-      if (BrowserWindow.getAllWindows().length === 0) createWindow();
-    });
-  });
+  app
+    .whenReady()
+    .then(async () => {
+      try {
+        await store.load();
+      } catch (error) {
+        startupFailed(error);
+        return;
+      }
+      session.defaultSession.setPermissionRequestHandler((_contents, _permission, callback) =>
+        callback(false),
+      );
+      session.defaultSession.setPermissionCheckHandler(() => false);
+      session.defaultSession.webRequest.onBeforeRequest((details, callback) =>
+        callback({
+          cancel: !details.url.startsWith('file://') && !details.url.startsWith('devtools://'),
+        }),
+      );
+      Menu.setApplicationMenu(
+        Menu.buildFromTemplate([
+          ...(process.platform === 'darwin' ? [{ role: 'appMenu' }] : []),
+          {
+            label: 'Edición',
+            submenu: [
+              { role: 'undo' },
+              { role: 'redo' },
+              { type: 'separator' },
+              { role: 'cut' },
+              { role: 'copy' },
+              { role: 'paste' },
+              { role: 'selectAll' },
+            ],
+          },
+          {
+            label: 'Ventana',
+            submenu: [
+              { role: 'reload' },
+              { role: 'togglefullscreen' },
+              { role: 'minimize' },
+              { role: 'close' },
+            ],
+          },
+        ]),
+      );
+      createWindow();
+      app.on('activate', () => {
+        if (BrowserWindow.getAllWindows().length === 0) createWindow();
+      });
+    })
+    .catch(startupFailed);
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
   });

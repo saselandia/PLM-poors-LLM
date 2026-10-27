@@ -14,4 +14,4 @@ jobs:
         with:
           node-version: 24
       - run: node scripts/check.mjs
-      - run: node --test test/model.test.mjs test/store.test.mjs test/launchers.test.mjs
+      - run: node --test test/model.test.mjs test/store.test.mjs test/launchers.test.mjs test/start-desktop.test.mjs

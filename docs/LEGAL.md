@@ -13,7 +13,7 @@ Fuentes:
 
 La documentación contempla uso del plan mediante Sign in with ChatGPT en aplicaciones de código abierto y ejecución local. La autenticación no concede acceso al historial de ChatGPT. Para productos de pago o alojados remotamente se indica otra vía de acceso. Los términos requieren identidad propia de la aplicación, autorización del usuario y almacenamiento de tokens persistentes local bajo su control. El acceso mediante el plan no puede exigir pagar al desarrollador. No se permite compartir cuentas, agrupar o revender uso, eludir cuotas ni convertir la conexión en acceso API general para otras herramientas. El uso en segundo plano requiere consentimiento expreso.
 
-**Decisión v0.1:** PLM abre la aplicación original y prepara texto; no implementa SIWC, app-server o autenticación. Una futura integración utilizará exclusivamente el flujo autorizado, sin copiar credenciales de Codex. Antes habrá que resolver la licencia del proyecto, elegibilidad, aviso de privacidad y requisitos de distribución. El prototipo privado no se presenta como integración SIWC aprobada.
+**Decisión v0.1:** PLM abre la aplicación original y prepara texto; no implementa SIWC, app-server o autenticación. Una futura integración utilizará exclusivamente el flujo autorizado, sin copiar credenciales de Codex. Antes habrá que resolver la licencia del proyecto, elegibilidad, aviso de privacidad y requisitos de distribución. Publicar su código no convierte al prototipo en una integración SIWC aprobada.
 
 La importación oficial admite trabajo y configuración de otras herramientas, con actualizaciones de elementos compatibles. No documenta una sesión universal entre proveedores ni transferencia de su procesamiento interno.
 

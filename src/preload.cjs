@@ -6,6 +6,7 @@ const invoke =
 contextBridge.exposeInMainWorld(
   'plm',
   Object.freeze({
+    ready: invoke('window:ready'),
     workspace: invoke('workspace:read'),
     createProject: invoke('project:create'),
     updateProject: invoke('project:update'),

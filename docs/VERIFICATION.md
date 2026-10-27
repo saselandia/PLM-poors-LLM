@@ -1,14 +1,17 @@
-# Verificación del prototipo 0.1
+# Verificación del prototipo 0.1.1
 
 Fecha: 27 de octubre de 2026. Entorno local: Linux x64 con sesión gráfica Wayland. Electron 45.0.0; Node.js 24.22.1 para herramientas de desarrollo.
 
 ## Comprobaciones realizadas
 
 - Sintaxis de todas las fuentes, scripts y pruebas: correcta.
-- 11 pruebas del núcleo: correctas. Cubren serialización de escrituras concurrentes, persistencia tras reinicio, conservación de archivos corruptos, recuperación de la cola después de errores, límites de entrada, validación de roles/proveedores y eliminación de rutas locales al importar/exportar.
+- 14 pruebas del núcleo: correctas. Cubren serialización de escrituras concurrentes, persistencia tras reinicio, conservación de archivos corruptos, recuperación de la cola después de errores, límites de entrada, validación de roles/proveedores y eliminación de rutas locales al importar/exportar. Las tres nuevas pruebas de arranque rechazan falsos éxitos por crear un proceso, propagan errores y conservan los diagnósticos.
 - Repositorio de pruebas independiente: creado, con commit inicial y prueba del saludo correcta. Está ignorado por el repositorio de la aplicación.
 - Flujo de escritorio en Electron de desarrollo: correcto.
 - Mismo flujo sobre el ejecutable Linux empaquetado: correcto.
+- Arranque normal, sin depurador, en desarrollo y contra el paquete Linux: correcto. El lanzador espera una confirmación de que la interfaz se ha inicializado y la ventana es visible. La segunda apertura recupera la misma instancia.
+- Interfaz a 480 px: sin desbordamiento horizontal; revisión del contexto operativa.
+- Acceso Linux `.desktop` instalado y validado, con registro de errores y sin requerir Node para abrir el paquete.
 
 El flujo de escritorio crea un proyecto con carpeta, añade historial, modifica decisiones, exige guardar el contexto pendiente, previsualiza un traspaso, comprueba la copia, exporta e importa un proyecto y verifica la persistencia después de reiniciar. También comprueba que una entrada con HTML se representa como texto, y que el renderer no expone `require` ni `process`. No sustituye una auditoría de seguridad.
 

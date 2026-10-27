@@ -2,7 +2,7 @@ import './create-sandbox.mjs';
 import { Store } from '../src/core/store.mjs';
 import { createProject, addMessage } from '../src/core/model.mjs';
 import { access } from 'node:fs/promises';
-import { spawn } from 'node:child_process';
+import { startDesktop } from '../src/core/start-desktop.mjs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import electronPath from 'electron';
@@ -48,20 +48,7 @@ if (process.platform !== 'darwin') {
     /* Use development Electron until a package exists. */
   }
 }
-const env = { ...process.env, PLM_DATA_DIR: directory };
-delete env.ELECTRON_RUN_AS_NODE;
-await new Promise((resolve, reject) => {
-  const child = spawn(executable, args, {
-    cwd: root,
-    env,
-    detached: true,
-    stdio: 'ignore',
-    shell: false,
-  });
-  child.once('error', reject);
-  child.once('spawn', () => {
-    child.unref();
-    resolve();
-  });
-});
-console.log(`PLM iniciado con un perfil de demostración: ${directory}`);
+const result = await startDesktop({ executable, args, directory, cwd: root });
+console.log(
+  `PLM: ventana cargada y visible (PID ${result.pid}). Perfil de demostración: ${directory}`,
+);
