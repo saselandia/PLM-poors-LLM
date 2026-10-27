@@ -1,3 +1,11 @@
+import {
+  MODELS,
+  MODEL_TIERS,
+  DEFAULT_MODEL,
+  modelById,
+  CONTEXT_REQUEST,
+  contextText,
+} from '../shared/context.js';
 const api = window.plm;
 const $ = (selector) => document.querySelector(selector);
 const escape = (value) =>
@@ -39,6 +47,7 @@ let workspace = { projects: [] },
 let includeHistory = true,
   includeFolder = false,
   toastTimer;
+let pendingContext = null;
 const contextDrafts = new Map(),
   composerDrafts = new Map(),
   pending = new Set();
@@ -66,16 +75,28 @@ function toast(message, error = false) {
 }
 async function refresh() {
   workspace = await api.workspace();
+  target = modelById(current()?.preferredModel ?? DEFAULT_MODEL).provider;
   render();
+}
+function modelOptions(selectedModel = DEFAULT_MODEL) {
+  return MODEL_TIERS.map(
+    (tier) =>
+      `<optgroup label="${escape(tier.label)}">${MODELS.filter((model) => model.tier === tier.id)
+        .map(
+          (model) =>
+            `<option value="${model.id}" ${model.id === selectedModel ? 'selected' : ''}>${escape(model.name)} · ${tools[model.provider].name}</option>`,
+        )
+        .join('')}</optgroup>`,
+  ).join('');
 }
 function sidebar() {
   return `<aside class="sidebar">
-    <div class="brand"><div class="brand-symbol">p<span>l</span>m</div><span class="version">LAB 0.1</span></div>
+    <div class="brand"><div class="brand-symbol">p<span>l</span>m</div><span class="version">LAB 0.2</span></div>
     <div class="brand-caption">poors LLM</div>
     <button class="new-project" data-action="new">${icon('plus')} Nuevo proyecto <span>↗</span></button>
     <div class="sidebar-section"><span>ESPACIO DE TRABAJO</span><span>${String(workspace.projects.length).padStart(2, '0')}</span></div>
     <nav aria-label="Proyectos">${workspace.projects.length ? workspace.projects.map((project) => `<button data-project="${escape(project.id)}" class="project-link ${selected === project.id ? 'active' : ''}">${icon('folder')}<span>${escape(project.name)}</span>${selected === project.id ? '<i></i>' : ''}</button>`).join('') : '<p class="sidebar-empty">Tus proyectos aparecerán aquí.</p>'}</nav>
-    <button class="import-link" data-action="import">${icon('upload')} Importar proyecto PLM</button>
+    <details class="context-import-menu"><summary>${icon('upload')} Importar contexto <span>⌄</span></summary><div class="context-import-guide"><p>Pídele a la IA de la conversación que genere <strong>plm.md</strong> con el contexto resumido del proyecto para que otro agente pueda continuar bien.</p><p><strong>Máximo 500 líneas.</strong> Incluye objetivo, decisiones, estado actual y próximos pasos.</p><button class="secondary" data-action="copy-context-request">${icon('copy')} Copiar petición para la IA</button><details class="request-details"><summary>Ver la petición completa</summary><pre>${escape(CONTEXT_REQUEST)}</pre></details><button class="primary" data-action="choose-context">${icon('upload')} Añadir plm.md</button><p>Después podrás elegir el modelo. Empieza por <strong>Mid</strong>.</p><button class="backup-link" data-action="restore-project">Restaurar copia JSON</button></div></details>
     <div class="sidebar-bottom"><div class="local-dot"></div><div>Tu espacio, en tu equipo.<small>Sin cuenta de PLM · Sin nube</small></div></div>
   </aside>`;
 }
@@ -103,7 +124,10 @@ function conversation(p) {
 }
 function context(p) {
   const draft = contextDrafts.get(p.id) || p;
-  return `<form id="context-form" class="context-form"><label>Nombre del proyecto<input name="name" value="${escape(draft.name)}" maxlength="120" required></label><label>Objetivo<textarea name="goal" rows="3" maxlength="20000" placeholder="El resultado que quieres conseguir">${escape(draft.goal)}</textarea></label><label>Decisiones tomadas<textarea name="decisions" rows="4" maxlength="100000" placeholder="Qué habéis decidido y por qué">${escape(draft.decisions)}</textarea></label><label>Próximos pasos<textarea name="nextSteps" rows="4" maxlength="100000" placeholder="Qué debería hacer la siguiente herramienta">${escape(draft.nextSteps)}</textarea></label><div class="form-actions"><span>Guarda los cambios antes de preparar un traspaso.</span><button type="submit" class="primary">Guardar contexto ${icon('arrow')}</button></div></form>`;
+  const base = p.importedContext
+    ? `<details class="import-preview saved-context"><summary>plm.md · ${contextText(p.importedContext).lines} / 500 líneas · contexto importado</summary><pre>${escape(p.importedContext)}</pre></details>`
+    : '';
+  return `${base}<form id="context-form" class="context-form"><label>Nombre del proyecto<input name="name" value="${escape(draft.name)}" maxlength="120" required></label><label>Objetivo<textarea name="goal" rows="3" maxlength="20000" placeholder="El resultado que quieres conseguir">${escape(draft.goal)}</textarea></label><label>Decisiones tomadas<textarea name="decisions" rows="4" maxlength="100000" placeholder="Qué habéis decidido y por qué">${escape(draft.decisions)}</textarea></label><label>Próximos pasos<textarea name="nextSteps" rows="4" maxlength="100000" placeholder="Qué debería hacer la siguiente herramienta">${escape(draft.nextSteps)}</textarea></label><div class="form-actions"><span>Guarda los cambios antes de preparar un traspaso.</span><button type="submit" class="primary">Guardar contexto ${icon('arrow')}</button></div></form>`;
 }
 function activity(p) {
   return `<div class="activity-list">${
@@ -121,6 +145,7 @@ function activity(p) {
 function handoffPanel(p) {
   const selectedTool = tools[target];
   return `<div class="handoff-heading"><span class="eyebrow">SIGUIENTE PASO</span>${icon('layers')}</div><h2>Continúa donde quieras.</h2><p class="handoff-intro">Llévate lo que ya sabes a otra herramienta.</p>
+    <label class="model-picker">Modelo de continuación<select id="continuation-model">${modelOptions(p.preferredModel)}</select></label><p class="model-guidance">Mid recomendado para empezar. Selecciona después ese modelo en su aplicación oficial; la disponibilidad depende de tu cuenta.</p>
     <div class="field-caption">DESTINO</div><div class="target-tools" role="group" aria-label="Destino del contexto">${Object.entries(
       tools,
     )
@@ -129,7 +154,7 @@ function handoffPanel(p) {
           `<button data-target="${id}" class="${target === id ? 'selected' : ''}" aria-pressed="${target === id}"><span class="tiny-mark ${id}">${tool.mark}</span>${tool.name}</button>`,
       )
       .join('')}</div>
-    <div class="context-summary"><div><span>${icon('edit')} Objetivo y decisiones</span><span>Siempre</span></div><label><span>${icon('chat')} Historial de conversación <small>${p.messages.length} entradas</small></span><input id="include-history" type="checkbox" ${includeHistory ? 'checked' : ''}></label><label><span>${icon('folder')} Ruta de la carpeta <small>Sin adjuntar archivos</small></span><input id="include-folder" type="checkbox" ${includeFolder ? 'checked' : ''} ${p.folder ? '' : 'disabled'}></label></div>
+    <div class="context-summary">${p.importedContext ? `<div><span>${icon('edit')} plm.md · ${contextText(p.importedContext).lines} líneas</span><span>Siempre</span></div>` : ''}<div><span>${icon('edit')} Objetivo y decisiones</span><span>Siempre</span></div><label><span>${icon('chat')} Historial de conversación <small>${p.messages.length} entradas</small></span><input id="include-history" type="checkbox" ${includeHistory ? 'checked' : ''}></label><label><span>${icon('folder')} Ruta de la carpeta <small>Sin adjuntar archivos</small></span><input id="include-folder" type="checkbox" ${includeFolder ? 'checked' : ''} ${p.folder ? '' : 'disabled'}></label></div>
     <button class="preview-button" data-action="preview">Revisar contexto ${icon('arrow')}</button>
     <div class="handoff-buttons"><button class="primary" data-action="copy">${icon('copy')} Copiar contexto</button><button class="secondary" data-action="export-handoff" aria-label="Exportar contexto Markdown" title="Exportar Markdown">${icon('download')}</button></div>
     <div class="handoff-instructions"><div class="step"><span>1</span><p>Copia y revisa tu contexto.</p></div><div class="step"><span>2</span><p>Abre ${selectedTool.name} y pégalo en su chat.</p></div><button class="launch-target" data-launch="${target}" ${providers.find((item) => item.id === target)?.installed ? '' : 'disabled'}>Abrir ${selectedTool.name} ${icon('external')}</button></div>
@@ -181,6 +206,8 @@ document.addEventListener('click', (event) => {
     async () => {
       if (button.dataset.project) {
         selected = button.dataset.project;
+        target = modelById(current().preferredModel).provider;
+        includeFolder = false;
         tab = 'conversation';
         render();
         return;
@@ -191,8 +218,15 @@ document.addEventListener('click', (event) => {
         return;
       }
       if (button.dataset.target) {
-        target = button.dataset.target;
-        renderRight();
+        const provider = button.dataset.target;
+        const model = modelById(current().preferredModel);
+        await api.selectModel(
+          selected,
+          model.provider === provider
+            ? model.id
+            : MODELS.find((item) => item.provider === provider && item.tier === 'mid').id,
+        );
+        await refresh();
         return;
       }
       if (button.dataset.launch) {
@@ -252,7 +286,24 @@ document.addEventListener('click', (event) => {
         case 'export-project':
           if (await api.exportProject(selected)) toast('Proyecto exportado sin rutas locales.');
           break;
-        case 'import': {
+        case 'copy-context-request':
+          await api.copyContextRequest();
+          toast('Petición copiada. Pégala en la conversación que quieres resumir.');
+          break;
+        case 'choose-context': {
+          const file = await api.chooseContext();
+          if (!file) break;
+          pendingContext = file;
+          $('#context-file-info').textContent =
+            `${file.filename} · ${file.lines} / 500 líneas. Revisa el contexto y elige con qué modelo continuar.`;
+          $('#context-import-form [name="name"]').value = file.name;
+          $('#import-model').innerHTML = modelOptions();
+          $('#import-context-content').textContent = file.content;
+          $('#toast').className = '';
+          $('#context-dialog').showModal();
+          break;
+        }
+        case 'restore-project': {
           const project = await api.importProject();
           if (project) {
             selected = project.id;
@@ -282,6 +333,21 @@ document.addEventListener('click', (event) => {
   );
 });
 document.addEventListener('change', (event) => {
+  if (event.target.id === 'continuation-model') {
+    const control = event.target;
+    control.disabled = true;
+    const projectId = selected,
+      modelId = event.target.value;
+    void run('select-model', async () => {
+      try {
+        await api.selectModel(projectId, modelId);
+        await refresh();
+        toast('Modelo guardado. Selecciónalo en la aplicación oficial para continuar.');
+      } finally {
+        control.disabled = false;
+      }
+    });
+  }
   if (event.target.id === 'include-history') includeHistory = event.target.checked;
   if (event.target.id === 'include-folder') includeFolder = event.target.checked;
   rememberDraft(event);
@@ -294,6 +360,13 @@ function rememberDraft(event) {
     composerDrafts.set(selected, Object.fromEntries(new FormData(form)));
 }
 document.addEventListener('input', rememberDraft);
+$('#context-dialog').addEventListener('close', () => {
+  if (pendingContext) {
+    const token = pendingContext.token;
+    pendingContext = null;
+    void run('discard-context', () => api.discardContext(token));
+  }
+});
 document.addEventListener('submit', (event) => {
   event.preventDefault();
   const form = event.target,
@@ -302,6 +375,21 @@ document.addEventListener('submit', (event) => {
     const submit = form.querySelector('[type="submit"]');
     if (submit) submit.disabled = true;
     try {
+      if (form.id === 'context-import-form') {
+        if (!pendingContext) throw new Error('Añade primero tu archivo plm.md.');
+        const project = await api.importContext({
+          token: pendingContext.token,
+          name: input.name,
+          model: input.model,
+        });
+        pendingContext = null;
+        selected = project.id;
+        includeFolder = false;
+        tab = 'context';
+        $('#context-dialog').close();
+        await refresh();
+        toast('Contexto importado. Ya puedes continuar con el modelo elegido.');
+      }
       if (form.id === 'project-form') {
         const project = await api.createProject({ ...input, folder: chosenFolder });
         selected = project.id;
@@ -336,6 +424,7 @@ if (!api) {
   try {
     [workspace, providers] = await Promise.all([api.workspace(), api.providers()]);
     selected = workspace.projects[0]?.id || null;
+    target = modelById(current()?.preferredModel ?? DEFAULT_MODEL).provider;
     render();
     await api.ready();
   } catch (error) {

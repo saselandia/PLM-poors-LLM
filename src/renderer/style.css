@@ -184,6 +184,107 @@ button svg {
   padding: 15px 9px;
   margin-top: 12px;
 }
+.context-import-menu {
+  margin-top: 12px;
+  color: #b7c7ab;
+  min-height: 42px;
+  overflow-y: auto;
+}
+.context-import-menu > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.context-import-menu > summary > span {
+  margin-left: auto;
+}
+.context-import-menu[open] {
+  border: 1px solid #35432f;
+  border-radius: 7px;
+  background: #171e14;
+}
+.context-import-guide {
+  padding: 0 10px 12px;
+}
+.context-import-guide p {
+  font-size: 11px;
+  line-height: 1.8;
+  color: #99ad8b;
+}
+.context-import-guide button {
+  width: 100%;
+  white-space: normal;
+  line-height: 1.5;
+  font-size: 10px;
+}
+.request-details {
+  margin: 13px 0;
+}
+.request-details summary,
+.import-preview summary {
+  cursor: pointer;
+  font-size: 11px;
+  color: #b8cba9;
+  line-height: 1.7;
+}
+.request-details pre,
+.import-preview pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+  line-height: 1.8;
+  padding: 12px;
+  background: #10160e;
+  border: 1px solid #35442c;
+  border-radius: 6px;
+  max-height: 260px;
+  overflow: auto;
+}
+.backup-link {
+  color: #819273;
+  padding-top: 10px;
+}
+.model-picker {
+  display: block;
+  font-size: 11px;
+  color: #bdcdb1;
+  margin-bottom: 8px;
+}
+.model-picker select,
+dialog select {
+  width: 100%;
+  border: 1px solid #4c5e3d;
+  border-radius: 6px;
+  background: #1a2316;
+  color: #dce9d2;
+  padding: 10px;
+  margin-top: 8px;
+  font-size: 12px;
+}
+.model-picker select optgroup,
+dialog select optgroup {
+  color: #c6e5ac;
+  background: #172014;
+  font-style: normal;
+}
+.model-picker select option,
+dialog select option {
+  color: #d9e4d1;
+  background: #1a2316;
+}
+.model-guidance,
+dialog .model-guidance {
+  font-size: 10px;
+  line-height: 1.8;
+  color: #8fa57e;
+  margin: 0 0 18px;
+}
+.saved-context {
+  margin-top: 20px;
+}
 .sidebar nav {
   max-height: 45vh;
   overflow: auto;

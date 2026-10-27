@@ -14,7 +14,16 @@ Objetivo: demostrar un ciclo real de continuidad mediante contexto portable, man
 - [ ] Verificación completa en ventanas reales de Windows y macOS.
 - [ ] Confirmar manualmente cada lanzador en instalaciones nativas y distribuciones de Linux.
 
-## 0.2 — Continuidad más cómoda
+## 0.2 — Importar contexto de conversaciones
+
+- [x] Desplegable con instrucciones y petición copiable para generar `plm.md` desde una conversación existente.
+- [x] Importación revisable de Markdown UTF-8 de hasta 500 líneas, sin recortes automáticos.
+- [x] Selección de modelo después de añadir el archivo; niveles Low, Mid, High y Frontier.
+- [x] Mid recomendado con Terra, Gemini Flash, Claude Haiku y Claude Sonnet.
+- [x] Persistencia del contexto base y modelo, traspasos y compatibilidad con copias JSON anteriores.
+- [x] Pruebas del límite exacto, rechazo de 501 líneas, cancelación y conservación tras reinicio.
+
+## Continuidad pendiente
 
 1. Varias conversaciones por proyecto e identificación opcional de sesiones externas mediante referencias documentadas.
 2. Importadores de exportaciones públicas y compatibles, con muestra anonimizada, atribución y pruebas por versión. No modificar bases privadas de proveedores.

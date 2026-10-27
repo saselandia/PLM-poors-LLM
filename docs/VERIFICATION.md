@@ -1,8 +1,10 @@
-# Verificación del prototipo 0.1.1
+# Verificación del prototipo 0.2.0
 
 Fecha: 27 de octubre de 2026. Entorno local: Linux x64 con sesión gráfica Wayland. Electron 45.0.0; Node.js 24.22.1 para herramientas de desarrollo.
 
 ## Comprobaciones realizadas
+
+La versión 0.2 añade 3 pruebas del contexto (17 en total): cómputo exacto de las 500 líneas, normalización UTF-8/CRLF, catálogo ordenado con Mid por defecto, compatibilidad de proyectos anteriores y persistencia del contexto/modelo en exportación e importación. El flujo de escritorio incluye petición copiable, rechazo de 501 líneas, cancelación sin crear proyectos, importación de 500 líneas, elección y cambio de modelo y conservación tras reiniciar.
 
 - Sintaxis de todas las fuentes, scripts y pruebas: correcta.
 - 14 pruebas del núcleo: correctas. Cubren serialización de escrituras concurrentes, persistencia tras reinicio, conservación de archivos corruptos, recuperación de la cola después de errores, límites de entrada, validación de roles/proveedores y eliminación de rutas locales al importar/exportar. Las tres nuevas pruebas de arranque rechazan falsos éxitos por crear un proceso, propagan errores y conservan los diagnósticos.

@@ -1,7 +1,7 @@
 import { _electron as electron } from 'playwright';
 import electronPath from 'electron';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -100,7 +100,8 @@ try {
   await desktop.evaluate(({ dialog }, file) => {
     dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [file] });
   }, exportPath);
-  await page.getByRole('button', { name: 'Importar proyecto PLM' }).click();
+  await page.locator('.context-import-menu > summary').click();
+  await page.getByRole('button', { name: 'Restaurar copia JSON' }).click();
   await page.getByRole('status').filter({ hasText: 'Proyecto importado' }).waitFor();
   assert.equal((await page.evaluate(() => window.plm.workspace())).projects.length, 2);
   assert.equal(await page.evaluate(() => typeof window.require), 'undefined');
@@ -118,6 +119,67 @@ try {
   assert.equal(restored.projects[0].messages.length, 1);
   assert.equal(restored.projects[0].handoffs.length, 1);
   assert.equal(restored.projects[1].messages.length, 2);
+  // Importing context is a two-step flow: a validated Markdown file, then a model.
+  const contextPath = path.join(directory, 'plm.md');
+  await page.locator('.context-import-menu > summary').click();
+  await page.getByRole('button', { name: 'Copiar petición para la IA' }).click();
+  const request = await desktop.evaluate(({ clipboard }) => clipboard.readText());
+  assert.ok(request.includes('plm.md') && request.includes('máximo de 500 líneas'));
+  await desktop.evaluate(({ dialog }, file) => {
+    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [file] });
+  }, contextPath);
+  await writeFile(contextPath, Array.from({ length: 501 }, (_, n) => `Línea ${n}`).join('\n'));
+  await page.getByRole('button', { name: 'Añadir plm.md' }).click();
+  await page.getByRole('status').filter({ hasText: '501 líneas' }).waitFor();
+  assert.equal((await page.evaluate(() => window.plm.workspace())).projects.length, 2);
+  const base =
+    [
+      '# Conversación importada de prueba',
+      'Decisión que el siguiente agente debe conservar.',
+      ...Array.from({ length: 498 }, (_, n) => `Dato ${n}`),
+    ].join('\n') + '\n';
+  await writeFile(contextPath, base);
+  await page.getByRole('button', { name: 'Añadir plm.md' }).click();
+  await page.locator('#context-dialog').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#import-model').inputValue(), 'terra');
+  assert.deepEqual(
+    await page
+      .locator('#import-model optgroup')
+      .evaluateAll((items) => items.map((item) => item.label)),
+    ['Low', 'Mid — recomendado para empezar', 'High', 'Frontier'],
+  );
+  assert.equal((await page.evaluate(() => window.plm.workspace())).projects.length, 2);
+  await page.screenshot({ path: path.join(output, 'import-context.png'), fullPage: true });
+  await page.getByRole('button', { name: 'Cancelar', exact: true }).click();
+  assert.equal((await page.evaluate(() => window.plm.workspace())).projects.length, 2);
+  await page.getByRole('button', { name: 'Añadir plm.md' }).click();
+  await page.locator('#context-dialog').waitFor({ state: 'visible' });
+  await page.getByLabel('Modelo para empezar', { exact: true }).selectOption('flash');
+  await page.getByRole('button', { name: 'Importar contexto', exact: false }).click();
+  await page.getByRole('status').filter({ hasText: 'Contexto importado' }).waitFor();
+  assert.equal(await page.locator('#continuation-model').inputValue(), 'flash');
+  assert.ok(
+    (await page.evaluate(() => window.plm.workspace())).projects[2].importedContext.includes(
+      'Dato 497',
+    ),
+  );
+  await page.getByRole('button', { name: 'Revisar contexto' }).click();
+  await page.locator('#preview-dialog').waitFor({ state: 'visible' });
+  assert.ok(
+    (await page.locator('#preview-content').textContent()).includes(
+      'Decisión que el siguiente agente debe conservar.',
+    ),
+  );
+  await page.getByRole('button', { name: 'Cerrar', exact: true }).last().click();
+  await page.locator('#continuation-model').selectOption('sonnet');
+  await page.getByRole('status').filter({ hasText: 'Modelo guardado' }).waitFor();
+  await desktop.close();
+  desktop = null;
+  page = await start();
+  const final = await page.evaluate(() => window.plm.workspace());
+  assert.equal(final.projects.length, 3);
+  assert.equal(final.projects[2].importedContext, base);
+  assert.equal(final.projects[2].preferredModel, 'sonnet');
   assert.deepEqual(rendererErrors, []);
   console.log(
     'Desktop E2E: creación, contexto, portapapeles, exportación/importación, XSS, aislamiento y reinicio correctos.',

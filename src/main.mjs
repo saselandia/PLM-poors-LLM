@@ -16,6 +16,8 @@ import {
   MAX_BYTES,
 } from './core/model.mjs';
 import { detectLaunchers, isLauncher, launchOfficial } from './core/launchers.mjs';
+import { CONTEXT_REQUEST, contextText, modelById } from './shared/context.js';
+import { randomUUID } from 'node:crypto';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const indexUrl = pathToFileURL(path.join(root, 'renderer/index.html')).href;
@@ -25,6 +27,7 @@ app.setName('PLM');
 const store = new Store(app.getPath('userData'));
 let window;
 const selectedFolders = new Set();
+const pendingContexts = new Map();
 const pendingLaunches = new Set();
 let loaded = false;
 if (/^[a-f0-9-]{36}$/.test(process.env.PLM_LAUNCH_ID || ''))
@@ -255,6 +258,69 @@ handle('project:import', async () => {
     return state;
   });
   return project;
+});
+handle('context:request', () => CONTEXT_REQUEST);
+handle('context:copy-request', () => {
+  clipboard.writeText(CONTEXT_REQUEST);
+});
+handle('context:choose', async () => {
+  const result = await dialog.showOpenDialog(window, {
+    title: 'Añadir plm.md de contexto',
+    properties: ['openFile'],
+    filters: [{ name: 'Contexto Markdown (plm.md)', extensions: ['md'] }],
+  });
+  if (result.canceled) return null;
+  const file = result.filePaths[0];
+  if (path.extname(file).toLowerCase() !== '.md')
+    throw new Error('Selecciona un archivo Markdown, como plm.md.');
+  if ((await stat(file)).size > 400_000)
+    throw new Error('El archivo es demasiado grande. Pide un resumen de hasta 500 líneas.');
+  let raw;
+  try {
+    raw = new TextDecoder('utf-8', { fatal: true }).decode(await readFile(file));
+  } catch {
+    throw new Error('Guarda plm.md como texto UTF-8 y vuelve a añadirlo.');
+  }
+  const context = contextText(raw);
+  const title =
+    context.content
+      .match(/^#\s+(.+)$/m)?.[1]
+      ?.trim()
+      .slice(0, 120) || 'Conversación importada';
+  const token = randomUUID();
+  pendingContexts.clear();
+  pendingContexts.set(token, context.content);
+  return { token, name: title, filename: path.basename(file), ...context };
+});
+handle('context:discard', (token) => {
+  pendingContexts.delete(token);
+});
+handle('context:import', async (input) => {
+  const content = pendingContexts.get(input?.token);
+  if (!content) throw new Error('Vuelve a seleccionar el archivo plm.md.');
+  const model = modelById(input.model);
+  const project = {
+    ...createProject({
+      name: input.name,
+      goal: 'Continuar el proyecto a partir del contexto de plm.md.',
+    }),
+    importedContext: content,
+    preferredModel: model.id,
+  };
+  await store.mutate((state) => {
+    state.projects.push(project);
+    return state;
+  });
+  pendingContexts.delete(input.token);
+  return project;
+});
+handle('project:model', async (id, modelId) => {
+  const model = modelById(modelId);
+  await update(id, (p) => ({
+    ...p,
+    preferredModel: model.id,
+    updatedAt: new Date().toISOString(),
+  }));
 });
 
 function createWindow() {

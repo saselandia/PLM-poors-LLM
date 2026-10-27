@@ -63,6 +63,37 @@
       </div>
     </dialog>
     <div id="toast" role="status" aria-live="polite"></div>
+    <dialog id="context-dialog" class="preview-dialog" aria-labelledby="context-import-title">
+      <form id="context-import-form">
+        <div class="dialog-heading">
+          <span class="eyebrow">CONTEXTO LISTO · SIGUIENTE PASO</span
+          ><button type="button" data-action="close-dialog" aria-label="Cerrar">×</button>
+        </div>
+        <h2 id="context-import-title">Elige el modelo para continuar</h2>
+        <p id="context-file-info"></p>
+        <label>Nombre de la conversación<input name="name" maxlength="120" required /></label>
+        <label
+          >Modelo para empezar<select
+            name="model"
+            id="import-model"
+            aria-label="Modelo para empezar"
+          ></select
+        ></label>
+        <p class="model-guidance">
+          <strong>Mid es lo recomendado para empezar:</strong> Terra, Gemini Flash, Claude Haiku o
+          Claude Sonnet. Los niveles son una organización de PLM. Elige un modelo disponible en tu
+          cuenta y selecciónalo después en la aplicación oficial.
+        </p>
+        <details class="import-preview">
+          <summary>Revisar plm.md antes de importar</summary>
+          <pre id="import-context-content"></pre>
+        </details>
+        <div class="dialog-footer">
+          <button type="button" data-action="close-dialog" class="secondary">Cancelar</button
+          ><button type="submit" class="primary">Importar contexto ↗</button>
+        </div>
+      </form>
+    </dialog>
     <script type="module" src="./app.js"></script>
   </body>
 </html>

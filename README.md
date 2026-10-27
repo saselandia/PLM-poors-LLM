@@ -4,7 +4,7 @@
 
 PLM es una aplicación de escritorio experimental para organizar el trabajo que realizas con **Codex, Claude Desktop y Antigravity**. Conserva tus objetivos, decisiones y conversaciones en tu equipo y prepara el contexto que quieras llevarte a la siguiente aplicación.
 
-La versión **0.1.1** funciona como un organizador local y un lanzador. Cada herramienta se utiliza en su aplicación original, con su propia cuenta, suscripción e interfaz. El traspaso de contexto es manual.
+La versión **0.2.0** funciona como un organizador local y un lanzador. Cada herramienta se utiliza en su aplicación original, con su propia cuenta, suscripción e interfaz. El traspaso de contexto es manual.
 
 ## Para qué sirve
 
@@ -31,6 +31,20 @@ Ejemplo: trabajas una solución en Codex, registras las decisiones en PLM, prepa
 | Peticiones a modelos, APIs o consumo de suscripciones desde PLM           | No implementadas                   |
 
 Abrir una herramienta no abre automáticamente un proyecto o una sesión. Copiar o exportar contexto tampoco confirma que se haya enviado o leído en el destino.
+
+## Importar contexto de una conversación
+
+1. Abre el desplegable **Importar contexto** de la barra lateral.
+2. Pulsa **Copiar petición para la IA** y pégala en la conversación de la que quieras conservar contexto. La petición pide un archivo **plm.md** con el proyecto resumido para que otro agente pueda continuar: objetivo, requisitos, decisiones, estado real, archivos relevantes, pruebas y próximos pasos.
+3. Guarda o descarga la respuesta como Markdown y pulsa **Añadir plm.md**.
+4. Revisa el archivo y elige el modelo en el menú que aparece. **Mid es lo recomendado para empezar**, con **Terra, Gemini Flash, Claude Haiku y Claude Sonnet**.
+5. Confirma **Importar contexto**. El archivo y la preferencia de modelo se guardan en una nueva conversación de PLM, sin enviar nada a un proveedor. Puedes cambiar después el modelo en **Modelo de continuación**.
+
+El límite es **500 líneas**, con un máximo adicional de 100.000 caracteres. Un salto de línea final no añade una línea vacía al cómputo. Los archivos de 501 líneas o más se rechazan con instrucciones para resumirlos; no se recortan silenciosamente. El contenido importado se conserva y se incluye en los traspasos aunque excluyas el historial de mensajes añadido después.
+
+El selector se ordena en **Low → Mid → High → Frontier**. Son categorías orientativas de PLM para organizar el trabajo, no una clasificación oficial de los proveedores ni una garantía de disponibilidad. La selección se guarda como preferencia: tú eliges ese modelo en la aplicación oficial. No se cambia automáticamente el modelo de Claude, Codex o Antigravity ni se hacen peticiones a sus servicios. Véanse las [fuentes y el catálogo](docs/MODELS.md).
+
+Las antiguas copias JSON siguen disponibles dentro del mismo desplegable como **Restaurar copia JSON**, y mediante **Exportar proyecto**. Los proyectos guardados antes de esta versión se conservan.
 
 ## Legalidad y condiciones de uso
 

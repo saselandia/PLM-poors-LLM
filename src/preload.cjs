@@ -23,6 +23,12 @@ contextBridge.exposeInMainWorld(
     exportHandoff: invoke('handoff:export'),
     exportProject: invoke('project:export'),
     importProject: invoke('project:import'),
+    contextRequest: invoke('context:request'),
+    copyContextRequest: invoke('context:copy-request'),
+    chooseContext: invoke('context:choose'),
+    discardContext: invoke('context:discard'),
+    importContext: invoke('context:import'),
+    selectModel: invoke('project:model'),
     documentation: invoke('provider:docs'),
   }),
 );

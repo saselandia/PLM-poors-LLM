@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { contextText, modelById, DEFAULT_MODEL } from '../shared/context.js';
 
 export const PROVIDERS = Object.freeze({
   codex: {
@@ -63,6 +64,8 @@ export function validateProject(value) {
     folder: text(value.folder, 'Carpeta', 4096),
     decisions: text(value.decisions, 'Decisiones', 100_000),
     nextSteps: text(value.nextSteps, 'Próximos pasos', 100_000),
+    importedContext: value.importedContext ? contextText(value.importedContext).content : '',
+    preferredModel: modelById(value.preferredModel ?? DEFAULT_MODEL).id,
     createdAt: date(value.createdAt),
     updatedAt: date(value.updatedAt),
     messages: list(value.messages, 'Historial', 2000).map((m) => {
@@ -158,6 +161,13 @@ export function buildHandoff(
     p.nextSteps || '(Sin próximos pasos registrados)',
     '',
   ];
+  const model = modelById(p.preferredModel);
+  if (model.provider === target)
+    lines.push(
+      `Modelo elegido en PLM: ${model.name} (${model.tier}). Selecciónalo en la aplicación oficial si está disponible.`,
+      '',
+    );
+  if (p.importedContext) lines.push('## Contexto importado de plm.md', p.importedContext, '');
   if (includeFolder && p.folder)
     lines.push(
       '## Carpeta local de referencia',

@@ -26,6 +26,12 @@ Las exportaciones JSON usan `format: plm-project` y `version: 1`. La importació
 
 El contexto incluye advertencias de procedencia y conserva el texto histórico sin interpretarlo. Esto no constituye una defensa completa contra instrucciones maliciosas en el contenido. Siempre hay revisión manual antes del uso en otra aplicación.
 
+## Importación de plm.md y selección de modelo (0.2)
+
+El selector nativo permite leer solo el Markdown que el usuario elige. Se exige UTF-8 válido, hasta 500 líneas y 100.000 caracteres. Se normalizan BOM y saltos CRLF, sin resumir o recortar el contenido. La importación permanece en memoria con un identificador efímero hasta que el usuario revisa el archivo y confirma el nombre y modelo; cancelar no crea proyectos.
+
+Los campos opcionales `importedContext` y `preferredModel` amplían el esquema v1 conservando los proyectos anteriores. El contexto base siempre forma parte del traspaso; la inclusión del historial posterior es independiente. El archivo de origen tiene límite de 500 líneas; los traspasos que añaden objetivo, instrucciones y mensajes pueden ser más largos. El catálogo y la petición copiable son constantes compartidas, sin llamadas de red ni cambio automático del modelo en las aplicaciones originales.
+
 ## Persistencia
 
 Una cola serializa las mutaciones para no perder escrituras concurrentes. Cada cambio se valida y se escribe en un temporal exclusivo; se sincroniza el archivo antes de renombrarlo sobre el destino. El estado en memoria solo cambia después del guardado. El protocolo evita archivos parcialmente escritos; no es un sistema de copias de seguridad ni garantiza recuperación ante todos los fallos de hardware. Un archivo corrupto provoca parada conservando el original.
