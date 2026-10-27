@@ -38,7 +38,7 @@ async function start() {
 }
 async function showHandoff(page) {
   if (!(await page.locator('#handoff-panel').count()))
-    await page.getByRole('button', { name: 'Continuar en otra app', exact: true }).click();
+    await page.getByRole('button', { name: 'Preparar contexto', exact: true }).click();
 }
 try {
   let page = await start();
@@ -65,9 +65,9 @@ try {
   await page.getByRole('button', { name: 'Elegir carpeta' }).click();
   await page.getByRole('button', { name: 'Crear proyecto', exact: false }).click();
   await page
-    .getByRole('textbox', { name: 'Mensaje o nota' })
+    .getByRole('textbox', { name: 'Texto para guardar' })
     .fill('Revisar el saludo de hello.mjs y conservar la decisión anterior.');
-  await page.getByRole('button', { name: 'Guardar entrada' }).click();
+  await page.getByRole('button', { name: 'Guardar texto' }).click();
   await page
     .getByText('Revisar el saludo de hello.mjs y conservar la decisión anterior.', { exact: true })
     .waitFor();
@@ -83,7 +83,7 @@ try {
   await page.getByRole('status').filter({ hasText: 'Guarda los cambios' }).waitFor();
   await page.getByRole('button', { name: 'Guardar contexto' }).click();
   await page.getByRole('status').filter({ hasText: 'Contexto guardado' }).waitFor();
-  await page.getByRole('tab', { name: 'Conversación', exact: false }).click();
+  await page.getByRole('tab', { name: 'Registro manual', exact: false }).click();
   await showHandoff(page);
   await page.getByRole('button', { name: 'Revisar contexto' }).click();
   await page.locator('#preview-dialog').waitFor({ state: 'visible' });
@@ -126,8 +126,8 @@ try {
   assert.equal(await page.evaluate(() => typeof window.require), 'undefined');
   assert.equal(await page.evaluate(() => typeof window.process), 'undefined');
   const malicious = '<img src=x onerror="window.INJECTED=true">';
-  await page.getByRole('textbox', { name: 'Mensaje o nota' }).fill(malicious);
-  await page.getByRole('button', { name: 'Guardar entrada' }).click();
+  await page.getByRole('textbox', { name: 'Texto para guardar' }).fill(malicious);
+  await page.getByRole('button', { name: 'Guardar texto' }).click();
   await page.getByText(malicious, { exact: true }).waitFor();
   assert.equal(await page.evaluate(() => window.INJECTED), undefined);
   await desktop.close();
@@ -170,7 +170,12 @@ try {
   );
   assert.equal((await page.evaluate(() => window.plm.workspace())).projects.length, 2);
   await page.screenshot({ path: path.join(output, 'import-context.png'), fullPage: true });
-  await page.getByRole('button', { name: 'Cancelar', exact: true }).click();
+  await page.locator('#context-dialog .import-preview > summary').click();
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('#context-dialog .import-preview').getAttribute('open'), null);
+  assert.equal(await page.locator('#context-dialog').isVisible(), true);
+  await page.keyboard.press('Escape');
+  await page.locator('#context-dialog').waitFor({ state: 'hidden' });
   assert.equal((await page.evaluate(() => window.plm.workspace())).projects.length, 2);
   await page.getByRole('button', { name: 'Añadir plm.md' }).click();
   await page.locator('#context-dialog').waitFor({ state: 'visible' });
@@ -244,11 +249,13 @@ try {
   assert.equal(await page.locator('.folder-new').isVisible(), false);
   await page.locator('.folder-heading').click();
   assert.equal(await page.locator('.folder-new').isVisible(), true);
-  await page.getByRole('textbox', { name: 'Mensaje o nota' }).fill('Borrador que debe conservarse');
+  await page
+    .getByRole('textbox', { name: 'Texto para guardar' })
+    .fill('Borrador que debe conservarse');
   await page.getByRole('tab', { name: 'Contexto', exact: true }).click();
-  await page.getByRole('tab', { name: 'Conversación', exact: false }).click();
+  await page.getByRole('tab', { name: 'Registro manual', exact: false }).click();
   assert.equal(
-    await page.getByRole('textbox', { name: 'Mensaje o nota' }).inputValue(),
+    await page.getByRole('textbox', { name: 'Texto para guardar' }).inputValue(),
     'Borrador que debe conservarse',
   );
   for (const size of [
@@ -290,6 +297,55 @@ try {
     .locator('#applications-dialog')
     .getByRole('button', { name: 'Cerrar', exact: true })
     .click();
+  // Escape unwinds only the foreground layer and preserves drafts.
+  await page.locator('.context-import-menu > summary').click();
+  await page.locator('.request-details > summary').click();
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('.request-details').getAttribute('open'), null);
+  assert.equal(await page.locator('.context-import-menu').getAttribute('open'), '');
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('.context-import-menu').getAttribute('open'), null);
+  await page.locator('.folder-heading').focus();
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('.folder-heading').getAttribute('aria-expanded'), 'false');
+  await page.locator('.folder-heading').click();
+  await page
+    .getByRole('textbox', { name: 'Texto para guardar' })
+    .fill('Borrador conservado al pulsar Esc');
+  await showHandoff(page);
+  await page.locator('#continuation-model').focus();
+  const modelBeforeEscape = await page.locator('#continuation-model').inputValue();
+  await page.keyboard.press('Space');
+  await page.keyboard.press('Escape');
+  assert.equal(
+    await page.locator('#handoff-panel').isVisible(),
+    true,
+    'Cerrar el selector nativo no debe cerrar el panel.',
+  );
+  assert.equal(await page.locator('#continuation-model').inputValue(), modelBeforeEscape);
+  await page.getByRole('button', { name: 'Revisar contexto', exact: true }).click();
+  await page.keyboard.press('Escape');
+  await page.locator('#preview-dialog').waitFor({ state: 'hidden' });
+  assert.equal(await page.locator('#handoff-panel').isVisible(), true);
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('#handoff-panel').count(), 0);
+  assert.equal(
+    await page
+      .getByRole('button', { name: 'Preparar contexto', exact: true })
+      .evaluate((el) => el === document.activeElement),
+    true,
+  );
+  assert.equal(
+    await page.getByRole('textbox', { name: 'Texto para guardar' }).inputValue(),
+    'Borrador conservado al pulsar Esc',
+  );
+  await page.setViewportSize({ width: 480, height: 760 });
+  await page.getByRole('button', { name: 'Abrir navegación', exact: true }).click();
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('.sidebar').isVisible(), false);
+  await page.getByRole('button', { name: 'Aplicaciones', exact: true }).last().click();
+  await page.keyboard.press('Escape');
+  await page.locator('#applications-dialog').waitFor({ state: 'hidden' });
   assert.deepEqual(rendererErrors, []);
   console.log(
     'Desktop E2E: creación, contexto, portapapeles, exportación/importación, XSS, aislamiento y reinicio correctos.',

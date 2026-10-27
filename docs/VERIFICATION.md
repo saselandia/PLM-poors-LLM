@@ -43,3 +43,9 @@ El CI verifica el núcleo en los tres sistemas. La interfaz y los lanzadores en 
 - Comprobaciones de posición del chat y visibilidad del editor en 1440×950, 1024×700 y 480×760; capturas revisadas.
 - Aplicaciones en diálogo separado y traspaso en panel que se abre a petición.
 - Datos v1 existentes compatibles: agrupación por la ruta guardada, sin reescribir ni eliminar historiales.
+
+## Teclado y registro manual 0.3.1
+
+- El editor se identifica como registro manual; guardar no envía nada a un proveedor.
+- Esc cierra los desplegables anidados, los diálogos, la navegación estrecha, las carpetas y el panel de contexto, respetando el elemento que está delante.
+- La prueba de escritorio verifica la conservación del borrador y la devolución del foco al cerrar el panel, así como la cancelación de la importación por teclado.

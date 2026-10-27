@@ -139,8 +139,8 @@ function providerCards() {
 }
 function conversation(p) {
   const draft = composerDrafts.get(p.id) || { content: '', role: 'user', provider: 'codex' };
-  return `<div class="conversation-body" data-conversation="${escape(p.id)}">${p.messages.length ? p.messages.map((m) => `<article class="message"><div class="message-avatar ${m.role === 'user' ? 'user' : m.provider}">${m.role === 'user' ? 'Tú' : m.role === 'note' ? '↳' : tools[m.provider].mark}</div><div class="message-content"><div class="message-meta"><strong>${m.role === 'user' ? 'Tú' : m.role === 'note' ? 'Nota de trabajo' : tools[m.provider].name}</strong><span>${formatDate(m.createdAt)}</span><button data-remove-message="${escape(m.id)}" class="remove-message" aria-label="Eliminar mensaje">×</button></div><p>${escape(m.content)}</p>${m.role === 'assistant' ? '<small class="entry-source">Respuesta añadida manualmente</small>' : ''}</div></article>`).join('') : `<div class="conversation-empty"><div class="empty-orbit">${icon('chat')}</div><h3>Esta conversación está lista</h3><p>Guarda mensajes, respuestas o notas aquí.<br>Usa «Continuar en otra app» para llevarte el contexto.</p></div>`}</div>
-    <form id="message-form" class="composer"><textarea name="content" aria-label="Mensaje o nota" placeholder="Añade lo que quieras conservar de esta conversación…" rows="3" maxlength="100000" required>${escape(draft.content)}</textarea><div class="composer-toolbar"><div class="composer-fields"><select name="role" aria-label="Tipo de entrada"><option value="user" ${draft.role === 'user' ? 'selected' : ''}>Mi mensaje</option><option value="assistant" ${draft.role === 'assistant' ? 'selected' : ''}>Respuesta de la herramienta</option><option value="note" ${draft.role === 'note' ? 'selected' : ''}>Nota</option></select><select name="provider" aria-label="Herramienta de origen">${Object.entries(
+  return `<div class="conversation-body" data-conversation="${escape(p.id)}">${p.messages.length ? p.messages.map((m) => `<article class="message"><div class="message-avatar ${m.role === 'user' ? 'user' : m.provider}">${m.role === 'user' ? 'Tú' : m.role === 'note' ? '↳' : tools[m.provider].mark}</div><div class="message-content"><div class="message-meta"><strong>${m.role === 'user' ? 'Tú' : m.role === 'note' ? 'Nota de trabajo' : tools[m.provider].name}</strong><span>${formatDate(m.createdAt)}</span><button data-remove-message="${escape(m.id)}" class="remove-message" aria-label="Eliminar mensaje">×</button></div><p>${escape(m.content)}</p>${m.role === 'assistant' ? '<small class="entry-source">Respuesta añadida manualmente</small>' : ''}</div></article>`).join('') : `<div class="conversation-empty"><div class="empty-orbit">${icon('chat')}</div><h3>Todavía no hay texto guardado</h3><p>Este registro se rellena manualmente.<br>Los chats de las otras aplicaciones no se importan automáticamente.</p></div>`}</div>
+    <form id="message-form" class="composer"><textarea name="content" aria-label="Texto para guardar" placeholder="Pega un mensaje o una respuesta de la aplicación original, o escribe una nota." rows="3" maxlength="100000" required>${escape(draft.content)}</textarea><div class="composer-toolbar"><div class="composer-fields"><select name="role" aria-label="Tipo de entrada"><option value="user" ${draft.role === 'user' ? 'selected' : ''}>Texto escrito por ti</option><option value="assistant" ${draft.role === 'assistant' ? 'selected' : ''}>Respuesta copiada de la IA</option><option value="note" ${draft.role === 'note' ? 'selected' : ''}>Nota adicional</option></select><select name="provider" aria-label="Aplicación de origen (solo etiqueta)" title="Indica de dónde copiaste el texto; no elige un modelo ni envía mensajes.">${Object.entries(
       tools,
     )
       .map(
@@ -149,7 +149,7 @@ function conversation(p) {
       )
       .join(
         '',
-      )}</select></div><button class="primary small" type="submit">Guardar entrada ${icon('plus')}</button></div></form><div class="composer-caption">Se guarda en PLM. Para hablar con un modelo, abre su aplicación.</div>`;
+      )}</select></div><button class="primary small" type="submit">Guardar texto ${icon('plus')}</button></div></form><div class="composer-caption">Guardar texto lo añade al registro de PLM. Para recibir una respuesta, escribe en la aplicación de IA.</div>`;
 }
 function context(p) {
   const draft = contextDrafts.get(p.id) || p;
@@ -200,8 +200,8 @@ function render() {
   const p = current();
   $('#app').innerHTML =
     `${sidebar()}<main class="main"><header class="topbar"><div><button class="nav-toggle secondary" data-action="navigation" aria-label="Abrir navegación">☰</button><span>${p?.folder ? 'Carpeta' : 'Conversaciones'}</span><span class="breadcrumb">/</span><strong>${p?.folder ? escape(p.folder.split(/[\\/]/).filter(Boolean).pop()) : 'Sin carpeta'}</strong></div><button class="secondary" data-action="applications">${icon('external')} Aplicaciones</button></header>
-    <div class="workspace-content"><div class="page-heading"><h1>${p ? escape(p.name) : 'Tu siguiente conversación'}</h1><div class="heading-actions">${p?.folder ? `<button class="secondary" data-new-conversation="${escape(p.id)}" title="Crear otra conversación en esta carpeta">${icon('plus')} Nueva conversación</button>` : ''}${p ? `<button class="secondary handoff-toggle" data-action="toggle-handoff" aria-expanded="${handoffOpen}">${icon('copy')} Continuar en otra app</button>` : ''}</div></div>
-    ${p ? `<div class="workspace-grid ${handoffOpen ? 'with-handoff' : ''}"><section class="work-panel"><div class="panel-tabs" role="tablist" aria-label="Contenido de la conversación"><button role="tab" data-tab="conversation" aria-selected="${tab === 'conversation'}" class="${tab === 'conversation' ? 'active' : ''}">${icon('chat')} Conversación <span>${p.messages.length}</span></button><button role="tab" data-tab="context" aria-selected="${tab === 'context'}" class="${tab === 'context' ? 'active' : ''}">${icon('edit')} Contexto</button><button role="tab" data-tab="activity" aria-selected="${tab === 'activity'}" class="${tab === 'activity' ? 'active' : ''}">${icon('clock')} Actividad</button></div><div class="tab-content ${tab === 'conversation' ? 'chat-content' : ''}">${tab === 'conversation' ? conversation(p) : tab === 'context' ? context(p) : activity(p)}</div><div class="project-footer"><button data-action="reveal-folder" ${p.folder ? '' : 'disabled'} title="${escape(p.folder)}">${icon('folder')} ${p.folder ? 'Abrir carpeta' : 'Sin carpeta'}</button><button data-action="export-project">${icon('download')} Exportar conversación</button><button data-action="delete-project" class="delete-project">Eliminar conversación</button></div></section>${handoffOpen ? `<aside id="handoff-panel" class="handoff-panel" aria-label="Continuar en otra aplicación"><button class="handoff-close secondary" data-action="toggle-handoff" aria-label="Cerrar traspaso">Cerrar ×</button><div id="handoff-content">${handoffPanel(p)}</div></aside>` : ''}</div>` : `<section class="welcome-panel"><div><h2>Conserva el contexto.<br>Continúa en tu aplicación.</h2><p>Crea una conversación independiente o agrupa varias en una carpeta. Importa un plm.md para retomar trabajo anterior.</p><button class="primary" data-action="new">Crear mi primer proyecto ${icon('plus')}</button></div></section>`}</div></main>`;
+    <div class="workspace-content"><div class="page-heading"><h1>${p ? escape(p.name) : 'Tu siguiente conversación'}</h1><div class="heading-actions">${p?.folder ? `<button class="secondary" data-new-conversation="${escape(p.id)}" title="Crear otra conversación en esta carpeta">${icon('plus')} Nueva conversación</button>` : ''}${p ? `<button class="secondary handoff-toggle" data-action="toggle-handoff" aria-expanded="${handoffOpen}">${icon('copy')} Preparar contexto</button>` : ''}</div></div>
+    ${p ? `<div class="workspace-grid ${handoffOpen ? 'with-handoff' : ''}"><section class="work-panel"><div class="panel-tabs" role="tablist" aria-label="Contenido de la conversación"><button role="tab" data-tab="conversation" aria-selected="${tab === 'conversation'}" class="${tab === 'conversation' ? 'active' : ''}">${icon('chat')} Registro manual <span>${p.messages.length}</span></button><button role="tab" data-tab="context" aria-selected="${tab === 'context'}" class="${tab === 'context' ? 'active' : ''}">${icon('edit')} Contexto</button><button role="tab" data-tab="activity" aria-selected="${tab === 'activity'}" class="${tab === 'activity' ? 'active' : ''}">${icon('clock')} Actividad</button></div><div class="tab-content ${tab === 'conversation' ? 'chat-content' : ''}">${tab === 'conversation' ? conversation(p) : tab === 'context' ? context(p) : activity(p)}</div><div class="project-footer"><button data-action="reveal-folder" ${p.folder ? '' : 'disabled'} title="${escape(p.folder)}">${icon('folder')} ${p.folder ? 'Abrir carpeta' : 'Sin carpeta'}</button><button data-action="export-project">${icon('download')} Exportar conversación</button><button data-action="delete-project" class="delete-project">Eliminar conversación</button></div></section>${handoffOpen ? `<aside id="handoff-panel" class="handoff-panel" aria-label="Continuar en otra aplicación"><button class="handoff-close secondary" data-action="toggle-handoff" aria-label="Cerrar traspaso">Cerrar ×</button><div id="handoff-content">${handoffPanel(p)}</div></aside>` : ''}</div>` : `<section class="welcome-panel"><div><h2>Conserva el contexto.<br>Continúa en tu aplicación.</h2><p>Crea una conversación independiente o agrupa varias en una carpeta. Importa un plm.md para retomar trabajo anterior.</p><button class="primary" data-action="new">Crear mi primer proyecto ${icon('plus')}</button></div></section>`}</div></main>`;
   const body = $('.conversation-body');
   if (body) body.scrollTop = scrollPositions.get(p.id) ?? body.scrollHeight;
   if ($('#applications-dialog').open) $('#applications-content').innerHTML = providerCards();
@@ -400,6 +400,53 @@ document.addEventListener('click', (event) => {
     },
   );
 });
+// Close only the foreground layer so Escape never dismisses the underlying view too.
+document.addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape' || event.defaultPrevented || event.isComposing) return;
+  const dialog = document.querySelector('dialog[open]');
+  const root = dialog || document;
+  const expanded = [...root.querySelectorAll('details[open]')].filter(
+    (item) => item.getClientRects().length,
+  );
+  const focused = document.activeElement?.closest('details[open]');
+  const detail = focused && root.contains(focused) ? focused : expanded.at(-1);
+  if (detail) {
+    event.preventDefault();
+    detail.open = false;
+    detail.querySelector('summary')?.focus();
+    return;
+  }
+  if (dialog) {
+    // Native dialog cancellation restores focus and runs the normal close cleanup.
+    return;
+  }
+  if (navigationOpen && $('.sidebar')?.getClientRects().length) {
+    event.preventDefault();
+    navigationOpen = false;
+    render();
+    $('.nav-toggle')?.focus();
+    return;
+  }
+  if (handoffOpen) {
+    event.preventDefault();
+    handoffOpen = false;
+    render();
+    $('.handoff-toggle')?.focus();
+    return;
+  }
+  // Folder groups are also expandable, and should obey the same keyboard convention.
+  const folderButton = document.activeElement
+    ?.closest('.folder-group')
+    ?.querySelector('.folder-heading');
+  if (folderButton?.getAttribute('aria-expanded') === 'true') {
+    event.preventDefault();
+    const folder = workspace.projects.find((p) => p.id === folderButton.dataset.folder)?.folder;
+    collapsedFolders.add(folder);
+    const id = folderButton.dataset.folder;
+    render();
+    document.querySelector(`[data-folder="${id}"]`)?.focus();
+  }
+});
 document.addEventListener('change', (event) => {
   if (event.target.form?.id === 'project-form' && event.target.name === 'scope') {
     const withFolder = event.target.value === 'folder';
@@ -486,7 +533,7 @@ document.addEventListener('submit', (event) => {
         composerDrafts.delete(id);
         await refresh();
         $('.conversation-body')?.scrollTo(0, 1e9);
-        toast('Entrada guardada en tu proyecto.');
+        toast('Texto guardado en PLM. No se ha enviado a ninguna IA.');
       }
       if (form.id === 'context-form') {
         const id = selected;
