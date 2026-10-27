@@ -16,6 +16,10 @@ test('las rutas con espacios y metacaracteres son argumentos, nunca órdenes de 
     args: [],
   });
   assert.throws(() => launchSpec('--headless'));
+  assert.deepEqual(launchSpec('C:\\Program Files\\PLM\\plm.exe', 'win32'), {
+    command: 'C:\\Program Files\\PLM\\plm.exe',
+    args: [],
+  });
 });
 test('las rutas candidatas de Windows y macOS usan los directorios de instalación', () => {
   assert.ok(

@@ -23,30 +23,32 @@ const names = {
 };
 export function candidates(provider, platform = process.platform, env = process.env) {
   providerId(provider);
+  const paths = platform === 'win32' ? path.win32 : path.posix;
   const home = env.HOME || env.USERPROFILE || '';
   if (platform === 'darwin')
-    return ['/Applications', path.join(home, 'Applications')].flatMap((root) =>
-      names[provider].darwin.map((n) => path.join(root, n)),
+    return ['/Applications', paths.join(home, 'Applications')].flatMap((root) =>
+      names[provider].darwin.map((n) => paths.join(root, n)),
     );
   if (platform === 'win32')
     return [env.LOCALAPPDATA, env.ProgramFiles, env['ProgramFiles(x86)']]
       .filter(Boolean)
-      .flatMap((root) => names[provider].win32.map((n) => path.win32.join(root, n)));
+      .flatMap((root) => names[provider].win32.map((n) => paths.join(root, n)));
   if (platform === 'linux')
     return [
       ...new Set(
         [
-          ...(env.PATH || '').split(path.delimiter),
-          path.join(home, '.local/bin'),
+          ...(env.PATH || '').split(paths.delimiter),
+          paths.join(home, '.local/bin'),
           '/usr/bin',
           '/usr/local/bin',
-        ].filter((p) => path.isAbsolute(p)),
+        ].filter((p) => paths.isAbsolute(p)),
       ),
-    ].flatMap((root) => names[provider].linux.map((n) => path.join(root, n)));
+    ].flatMap((root) => names[provider].linux.map((n) => paths.join(root, n)));
   return [];
 }
 export async function isLauncher(file, platform = process.platform) {
-  if (typeof file !== 'string' || !path.isAbsolute(file) || file.includes('\0')) return false;
+  const paths = platform === 'win32' ? path.win32 : path.posix;
+  if (typeof file !== 'string' || !paths.isAbsolute(file) || file.includes('\0')) return false;
   try {
     const info = await stat(file);
     if (platform === 'darwin' && file.endsWith('.app')) return info.isDirectory();
@@ -73,7 +75,8 @@ export async function detectLaunchers(overrides = {}) {
   return result;
 }
 export function launchSpec(executable, platform = process.platform) {
-  if (typeof executable !== 'string' || !path.isAbsolute(executable) || executable.includes('\0'))
+  const paths = platform === 'win32' ? path.win32 : path.posix;
+  if (typeof executable !== 'string' || !paths.isAbsolute(executable) || executable.includes('\0'))
     throw new Error('Ruta de aplicación no válida.');
   if (platform === 'darwin' && executable.endsWith('.app'))
     return { command: '/usr/bin/open', args: ['-a', executable] };
